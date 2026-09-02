@@ -1,0 +1,13 @@
+target/
+dependency-reduced-pom.xml
+.idea/
+*.iml
+.classpath
+.project
+.settings/
+
+# Marketplace listing copy (paste into Modrinth, Spigot, Hangar, CurseForge — not tracked in git)
+docs/modrinth-description.md
+docs/spigot-description.bbcode
+docs/hangar-description.md
+docs/curseforge-description.md

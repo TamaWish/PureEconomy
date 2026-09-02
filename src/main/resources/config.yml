@@ -1,0 +1,46 @@
+# =============================================================================
+# PureEconomy v1.0.0
+# Author: Lozaine@TamaWish
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# General Settings
+# -----------------------------------------------------------------------------
+
+# Language file to load from plugins/PureEconomy/lang/<code>.yml.
+language: en
+
+# Flush changed balances to disk at this interval in seconds.
+# Set to 0 to save only when a player quits or the plugin disables.
+autosave-seconds: 60
+
+# Create new player accounts using each currency's starting balance on join.
+create-on-join: true
+
+# -----------------------------------------------------------------------------
+# Economy Settings
+# -----------------------------------------------------------------------------
+
+# Currency used by Vault and by commands when no currency is specified.
+default-currency: coins
+
+# Smallest amount players may transfer with /pay.
+pay-minimum: 0.01
+
+# -----------------------------------------------------------------------------
+# Currencies
+# -----------------------------------------------------------------------------
+
+# Add optional currencies below. Fresh installations only use coins.
+# See the README for a complete multi-currency example and payout guide.
+# IDs must contain only lowercase letters, numbers, and underscores.
+currencies:
+  coins:
+    singular: Coin
+    plural: Coins
+    symbol: "$"
+    decimals: 2
+    starting-balance: 100.00
+    # Set to -1 for no balance cap.
+    max-balance: -1
+    payable: true

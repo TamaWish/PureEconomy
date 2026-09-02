@@ -1,0 +1,97 @@
+# =============================================================================
+# PureEconomy English Language File
+# Copy this file to lang/<code>.yml, translate the messages, then set
+# language: <code> in config.yml.
+# =============================================================================
+
+# Use & color codes supported by Minecraft.
+# Available placeholders depend on the message and are shown in braces, such
+# as {prefix}, {player}, {amount}, {currency}, {page}, and {rank}.
+# Keep placeholders unchanged when translating.
+
+# -----------------------------------------------------------------------------
+# Prefix
+# -----------------------------------------------------------------------------
+
+prefix: "&8[&aEco&8] &r"
+
+# -----------------------------------------------------------------------------
+# Errors and Validation
+# -----------------------------------------------------------------------------
+
+no-permission: "{prefix}&cYou cannot do that."
+player-only: "{prefix}&cPlayers only."
+unknown-player: "{prefix}&cPlayer not found: &f{player}"
+unknown-currency: "{prefix}&cUnknown currency: &f{currency}"
+invalid-amount: "{prefix}&cInvalid amount."
+invalid-number: "{prefix}&cThat is not a number."
+not-enough: "{prefix}&cNot enough {currency}."
+pay-self: "{prefix}&cYou cannot pay yourself."
+pay-disabled: "{prefix}&cThat currency cannot be transferred."
+pay-minimum: "{prefix}&cMinimum transfer is {amount}."
+max-balance: "{prefix}&cThat would exceed the max balance for {currency}."
+bank-max-balance: "{prefix}&cThat would exceed the bank balance limit for {currency}."
+bank-not-enough: "{prefix}&cNot enough {currency} in your bank."
+account-missing: "{prefix}&cNo account for {player}."
+
+# -----------------------------------------------------------------------------
+# Balance Messages
+# -----------------------------------------------------------------------------
+
+balance-self: "{prefix}&7Your {currency}: &f{amount}"
+balance-other: "{prefix}&f{player}&7's {currency}: &f{amount}"
+balance-all-header: "{prefix}&7Balances for &f{player}&7:"
+balance-all-line: "&8- &f{currency}&7: &f{amount}"
+
+# -----------------------------------------------------------------------------
+# Player Payments
+# -----------------------------------------------------------------------------
+
+pay-sent: "{prefix}&7Sent &f{amount} &7to &f{player}&7."
+pay-received: "{prefix}&7Received &f{amount} &7from &f{player}&7."
+
+# -----------------------------------------------------------------------------
+# Bank
+# -----------------------------------------------------------------------------
+
+bank-balance: "{prefix}&7Your banked {currency}: &f{amount}"
+bank-balance-header: "{prefix}&7Your bank balances:"
+bank-balance-line: "&8- &f{currency}&7: &f{amount}"
+bank-transfer: "{prefix}&7Transferred &f{amount} &7to your bank."
+bank-withdraw: "{prefix}&7Withdrew &f{amount} &7from your bank."
+
+# -----------------------------------------------------------------------------
+# Administrative Economy Messages
+# -----------------------------------------------------------------------------
+
+eco-give: "{prefix}&7Gave &f{amount} &7to &f{player}&7."
+eco-take: "{prefix}&7Took &f{amount} &7from &f{player}&7."
+eco-set: "{prefix}&7Set &f{player}&7's {currency} to &f{amount}&7."
+eco-reset: "{prefix}&7Reset &f{player}&7's {currency} to starting balance."
+eco-reload: "{prefix}&aReloaded config and language."
+
+# -----------------------------------------------------------------------------
+# Balance Leaderboard
+# -----------------------------------------------------------------------------
+
+baltop-header: "{prefix}&7Top {currency} &8(&7page {page}&8)"
+baltop-line: "&e{rank}. &f{player} &7- &f{amount}"
+baltop-empty: "{prefix}&7Nobody has this currency yet."
+baltop-page: "{prefix}&cNo such page."
+
+# -----------------------------------------------------------------------------
+# Currency List
+# -----------------------------------------------------------------------------
+
+currency-list-header: "{prefix}&7Currencies &8(default: &f{default}&8)"
+currency-list-line: "&8- &f{id} &7{singular}/{plural} &8({symbol})"
+
+# -----------------------------------------------------------------------------
+# Command Usage
+# -----------------------------------------------------------------------------
+
+usage-balance: "{prefix}&7Usage: &f/balance [player] [currency]"
+usage-bank: "{prefix}&7Usage: &f/bank <balance|transfer|withdraw> [amount] [currency]"
+usage-pay: "{prefix}&7Usage: &f/pay <player> <amount> [currency]"
+usage-baltop: "{prefix}&7Usage: &f/baltop [currency] [page]"
+usage-eco: "{prefix}&7Usage: &f/eco <give|take|set|reset|reload> [player] [amount] [currency]"

@@ -1,0 +1,100 @@
+# =============================================================================
+# PureEconomy Plugin Manifest
+# This file is packaged inside the plugin jar and read by the server.
+# Server admins normally configure the plugin through config.yml instead.
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Plugin Metadata
+# -----------------------------------------------------------------------------
+
+name: PureEconomy
+version: ${project.version}
+main: io.github.tamawish.pureeconomy.PureEconomy
+api-version: "1.21.4"
+folia-supported: true
+author: "Lozaine@TamaWish"
+description: Lightweight multi-currency economy. Pairs with AuraUtils for utilities + economy.
+
+# These integrations are optional. PureEconomy still starts without them.
+# Vault exposes only the configured default currency.
+# PlaceholderAPI exposes every configured currency.
+softdepend:
+  - Vault
+  - PlaceholderAPI
+load: STARTUP
+
+# -----------------------------------------------------------------------------
+# Commands
+# -----------------------------------------------------------------------------
+
+# Optional command arguments are shown in [brackets].
+# Required command arguments are shown in <angle brackets>.
+commands:
+  balance:
+    description: Check a balance
+    aliases: [bal, money]
+    usage: /balance [player] [currency]
+  bank:
+    description: View or move money to and from your bank
+    usage: /bank <balance|transfer|withdraw> [amount] [currency]
+  pay:
+    description: Pay another player
+    usage: /pay <player> <amount> [currency]
+  baltop:
+    description: Richest players
+    aliases: [balancetop, moneytop]
+    usage: /baltop [currency] [page]
+  eco:
+    description: Admin economy tools
+    usage: /eco <give|take|set|reset|reload> ...
+  currency:
+    description: List currencies
+    aliases: [currencies]
+    usage: /currency
+
+# -----------------------------------------------------------------------------
+# Permissions
+# -----------------------------------------------------------------------------
+
+# "true" grants the permission to all players; "op" grants it to operators.
+# pureeconomy.admin collects all administrative economy permissions.
+permissions:
+  pureeconomy.balance:
+    default: true
+  pureeconomy.balance.others:
+    default: op
+  pureeconomy.bank:
+    default: true
+  pureeconomy.bank.transfer:
+    default: true
+  pureeconomy.bank.withdraw:
+    default: true
+  pureeconomy.pay:
+    default: true
+  pureeconomy.baltop:
+    default: true
+  pureeconomy.currency:
+    default: true
+  pureeconomy.eco:
+    default: op
+  pureeconomy.eco.give:
+    default: op
+  pureeconomy.eco.take:
+    default: op
+  pureeconomy.eco.set:
+    default: op
+  pureeconomy.eco.reset:
+    default: op
+  pureeconomy.eco.reload:
+    default: op
+  pureeconomy.admin:
+    default: op
+    children:
+      pureeconomy.eco: true
+      pureeconomy.eco.give: true
+      pureeconomy.eco.take: true
+      pureeconomy.eco.set: true
+      pureeconomy.eco.reset: true
+      pureeconomy.eco.reload: true
+      pureeconomy.balance.others: true
