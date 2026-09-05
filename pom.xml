@@ -6,7 +6,7 @@
 
     <groupId>io.github.tamawish</groupId>
     <artifactId>PureEconomy</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.1</version>
     <packaging>jar</packaging>
     <name>PureEconomy</name>
     <description>Lightweight multi-currency economy for Bukkit, Spigot, Paper and Folia.</description>
@@ -55,6 +55,12 @@
             <artifactId>bstats-bukkit</artifactId>
             <version>3.2.1</version>
             <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>5.11.4</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 

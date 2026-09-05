@@ -1,5 +1,5 @@
 # =============================================================================
-# PureEconomy v1.0.0
+# PureEconomy v1.0.1
 # Author: Lozaine@TamaWish
 # =============================================================================
 
@@ -18,6 +18,17 @@ autosave-seconds: 60
 create-on-join: true
 
 # -----------------------------------------------------------------------------
+# Update Checker
+# -----------------------------------------------------------------------------
+
+# Ask GitHub for the latest TamaWish/PureEconomy release when the plugin starts
+# or its config is reloaded. If a newer release exists, console is notified and
+# players with the configured pureeconomy.admin permission receive a clickable
+# link to that release when they join.
+update-checker:
+  enabled: true
+
+# -----------------------------------------------------------------------------
 # Economy Settings
 # -----------------------------------------------------------------------------
 
@@ -26,6 +37,113 @@ default-currency: coins
 
 # Smallest amount players may transfer with /pay.
 pay-minimum: 0.01
+
+# -----------------------------------------------------------------------------
+# Permissions
+# -----------------------------------------------------------------------------
+#
+# Change these here, then run /eco reload (or restart).
+#
+#   node     Permission string checked by commands and granted in LuckPerms
+#            (or any permission plugin). Rename only if you also grant the
+#            new name. Leave the defaults if you are unsure.
+#   default  Who has it when no permission plugin assigns it:
+#              everyone  all players
+#              op        operators only
+#              nobody    nobody until a permission plugin grants it
+#
+# Console always bypasses these checks.
+# LuckPerms (and similar) override default when they set the node explicitly.
+# Grant pureeconomy.admin to give every admin economy permission at once.
+#
+# This file is copied once on first run and is not overwritten by a new jar.
+# Existing servers must paste this section in by hand, or the plugin keeps
+# the built-in nodes and defaults listed below.
+
+permissions:
+  # /balance — own wallet and bank
+  balance:
+    node: pureeconomy.balance
+    default: everyone
+
+  # /balance <player> — view another player's balances
+  balance-others:
+    node: pureeconomy.balance.others
+    default: op
+
+  # /bank — view own bank
+  bank:
+    node: pureeconomy.bank
+    default: everyone
+
+  # /bank transfer — wallet to bank
+  bank-transfer:
+    node: pureeconomy.bank.transfer
+    default: everyone
+
+  # /bank withdraw — bank to wallet
+  bank-withdraw:
+    node: pureeconomy.bank.withdraw
+    default: everyone
+
+  # /pay
+  pay:
+    node: pureeconomy.pay
+    default: everyone
+
+  # /baltop
+  baltop:
+    node: pureeconomy.baltop
+    default: everyone
+
+  # /currency
+  currency:
+    node: pureeconomy.currency
+    default: everyone
+
+  # Parent for /eco (LuckPerms grouping; commands check the specific nodes)
+  eco:
+    node: pureeconomy.eco
+    default: op
+
+  # /eco give|take|set|reset|reload
+  eco-give:
+    node: pureeconomy.eco.give
+    default: op
+  eco-take:
+    node: pureeconomy.eco.take
+    default: op
+  eco-set:
+    node: pureeconomy.eco.set
+    default: op
+  eco-reset:
+    node: pureeconomy.eco.reset
+    default: op
+  eco-reload:
+    node: pureeconomy.eco.reload
+    default: op
+
+  # /eco bank give|take|set|reset
+  eco-bank:
+    node: pureeconomy.eco.bank
+    default: op
+  eco-bank-give:
+    node: pureeconomy.eco.bank.give
+    default: op
+  eco-bank-take:
+    node: pureeconomy.eco.bank.take
+    default: op
+  eco-bank-set:
+    node: pureeconomy.eco.bank.set
+    default: op
+  eco-bank-reset:
+    node: pureeconomy.eco.bank.reset
+    default: op
+
+  # All admin economy permissions in one node
+  admin:
+    node: pureeconomy.admin
+    default: op
 
 # -----------------------------------------------------------------------------
 # Currencies

@@ -4,6 +4,7 @@ import io.github.tamawish.pureeconomy.PureEconomy;
 import io.github.tamawish.pureeconomy.economy.Currency;
 import io.github.tamawish.pureeconomy.economy.EconomyService;
 import io.github.tamawish.pureeconomy.lang.Lang;
+import io.github.tamawish.pureeconomy.permission.Permissions.Node;
 import io.github.tamawish.pureeconomy.util.Amounts;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
@@ -34,7 +35,7 @@ public final class PayCommand implements CommandExecutor, TabCompleter {
             lang.send(sender, "player-only");
             return true;
         }
-        if (!player.hasPermission("pureeconomy.pay")) {
+        if (!plugin.permissions().has(player, Node.PAY)) {
             lang.send(sender, "no-permission");
             return true;
         }

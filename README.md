@@ -28,7 +28,7 @@ about. Use only what your server needs.
 mvn -q -DskipTests package
 ```
 
-Jar: `target/PureEconomy-1.0.0.jar`
+Jar: `target/PureEconomy-1.0.1.jar`
 
 - Java 21+ (Java 25 is required by Paper/Folia 26.1+)
 - Server 1.21.4+ (Paper/Folia recommended)
@@ -47,24 +47,42 @@ Server owners can disable metrics for all bStats-enabled plugins by editing
 `plugins/bStats/config.yml` and setting `enabled: false`. See the
 [bStats documentation](https://bstats.org/getting-started) for details.
 
+## Update checker
+
+PureEconomy checks [GitHub releases](https://github.com/TamaWish/PureEconomy/releases)
+asynchronously when it starts and after `/eco reload`. If a newer release exists, it logs the
+version and release URL to console. Players with `pureeconomy.admin` also receive a clickable
+release link when they join. Set `update-checker.enabled: false` in `config.yml` to disable it.
+
 ## Commands
 
 | Command | Permission | Description |
 |---|---|---|
-| `/balance [player] [currency]` | `pureeconomy.balance` / `.others` | Balance(s) |
+| `/balance [player] [currency]` | `pureeconomy.balance` / `.others` | Wallet and bank balance(s) |
 | `/bank [balance] [currency]` | `pureeconomy.bank` | Bank balance(s) |
 | `/bank transfer <amount> [currency]` | `pureeconomy.bank.transfer` | Move wallet funds to the bank (`deposit` and `tf` also work) |
 | `/bank withdraw <amount> [currency]` | `pureeconomy.bank.withdraw` | Move bank funds to the wallet |
 | `/pay <player> <amount> [currency]` | `pureeconomy.pay` | Transfer |
 | `/baltop [currency] [page]` | `pureeconomy.baltop` | Leaderboard |
 | `/currency` | `pureeconomy.currency` | List currencies |
-| `/eco give \| take \| set <player> <amount> [currency]` | `pureeconomy.eco.*` | Admin |
-| `/eco reset <player> [currency]` | `pureeconomy.eco.reset` | Starting balance |
+| `/eco give \| take \| set <player> <amount> [currency]` | `pureeconomy.eco.*` | Admin wallet |
+| `/eco reset <player> [currency]` | `pureeconomy.eco.reset` | Wallet starting balance (bank unchanged) |
+| `/eco bank give \| take \| set <player> <amount> [currency]` | `pureeconomy.eco.bank.*` | Admin bank |
+| `/eco bank reset <player> [currency]` | `pureeconomy.eco.bank.reset` | Bank to zero |
 | `/eco reload` | `pureeconomy.eco.reload` | Reload config + lang |
 
 ## Config
 
 `plugins/PureEconomy/config.yml`
+
+The `permissions:` section lists every command node with comments. Change `node`
+to rename a permission, or set `default` to `everyone`, `op`, or `nobody`. Then
+`/eco reload`. LuckPerms (and similar) still override `default` when they grant
+or deny the node. Console always bypasses these checks.
+
+This file is copied once on first run and is not overwritten by a new jar.
+Existing servers must paste the `permissions:` block from the jar config, or
+the plugin keeps the built-in `pureeconomy.*` nodes and defaults.
 
 Fresh installations contain only the default `coins` currency. Extra currencies
 are optional and can be added under `currencies:` when a server needs them.
@@ -178,7 +196,12 @@ For example, after configuring `gems`,
 Copy it to `lang/xx.yml`, edit it, and set `language: xx` in `config.yml`. The
 plugin ships English only.
 
-`&` color codes. `{prefix}`, `{player}`, `{amount}`, `{currency}` placeholders.
+The file is copied once on first run and is not overwritten when you drop in a
+new jar, so custom wording is kept. New or changed default text for keys that
+already exist must be copied in by hand, or delete `lang/en.yml` and restart to
+restore the shipped file.
+
+`&` color codes. `{prefix}`, `{player}`, `{amount}`, `{bank}`, `{currency}` placeholders.
 
 ## Storage
 
@@ -189,10 +212,19 @@ plugin ships English only.
 ```java
 import io.github.tamawish.pureeconomy.PureEconomy;
 
-PureEconomy.get().economy().get(uuid, currency);
-PureEconomy.get().economy().add(uuid, currency, amount);
-PureEconomy.get().economy().getBank(uuid, currency);
-PureEconomy.get().economy().transferToBank(uuid, currency, amount);
-PureEconomy.get().economy().withdrawFromBank(uuid, currency, amount);
-PureEconomy.get().economy().currency("currency_id");
+var eco = PureEconomy.get().economy();
+eco.get(uuid, currency);
+eco.add(uuid, currency, amount);
+eco.take(uuid, currency, amount);
+eco.set(uuid, currency, amount);
+eco.transfer(from, to, currency, amount);
+eco.reset(uuid, currency);          // wallet only
+eco.getBank(uuid, currency);
+eco.addBank(uuid, currency, amount);
+eco.takeBank(uuid, currency, amount);
+eco.setBank(uuid, currency, amount);
+eco.resetBank(uuid, currency);
+eco.transferToBank(uuid, currency, amount);
+eco.withdrawFromBank(uuid, currency, amount);
+eco.currency("currency_id");
 ```

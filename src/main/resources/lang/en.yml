@@ -6,7 +6,7 @@
 
 # Use & color codes supported by Minecraft.
 # Available placeholders depend on the message and are shown in braces, such
-# as {prefix}, {player}, {amount}, {currency}, {page}, and {rank}.
+# as {prefix}, {player}, {amount}, {bank}, {currency}, {page}, and {rank}.
 # Keep placeholders unchanged when translating.
 
 # -----------------------------------------------------------------------------
@@ -14,6 +14,14 @@
 # -----------------------------------------------------------------------------
 
 prefix: "&8[&aEco&8] &r"
+
+# -----------------------------------------------------------------------------
+# Update Checker
+# -----------------------------------------------------------------------------
+
+update-available: "{prefix}&aA new PureEconomy release is available: &f{latest} &7(running {current})."
+update-click: "{prefix}&bClick here to open the GitHub release page."
+update-hover: "&7Open &f{url}"
 
 # -----------------------------------------------------------------------------
 # Errors and Validation
@@ -38,10 +46,10 @@ account-missing: "{prefix}&cNo account for {player}."
 # Balance Messages
 # -----------------------------------------------------------------------------
 
-balance-self: "{prefix}&7Your {currency}: &f{amount}"
-balance-other: "{prefix}&f{player}&7's {currency}: &f{amount}"
+balance-self: "{prefix}&7Your {currency}: &f{amount} &8(&7bank &f{bank}&8)"
+balance-other: "{prefix}&f{player}&7's {currency}: &f{amount} &8(&7bank &f{bank}&8)"
 balance-all-header: "{prefix}&7Balances for &f{player}&7:"
-balance-all-line: "&8- &f{currency}&7: &f{amount}"
+balance-all-line: "&8- &f{currency}&7: &f{amount} &8(&7bank &f{bank}&8)"
 
 # -----------------------------------------------------------------------------
 # Player Payments
@@ -59,6 +67,7 @@ bank-balance-header: "{prefix}&7Your bank balances:"
 bank-balance-line: "&8- &f{currency}&7: &f{amount}"
 bank-transfer: "{prefix}&7Transferred &f{amount} &7to your bank."
 bank-withdraw: "{prefix}&7Withdrew &f{amount} &7from your bank."
+bank-failed: "{prefix}&cCould not complete that bank transfer."
 
 # -----------------------------------------------------------------------------
 # Administrative Economy Messages
@@ -67,7 +76,11 @@ bank-withdraw: "{prefix}&7Withdrew &f{amount} &7from your bank."
 eco-give: "{prefix}&7Gave &f{amount} &7to &f{player}&7."
 eco-take: "{prefix}&7Took &f{amount} &7from &f{player}&7."
 eco-set: "{prefix}&7Set &f{player}&7's {currency} to &f{amount}&7."
-eco-reset: "{prefix}&7Reset &f{player}&7's {currency} to starting balance."
+eco-reset: "{prefix}&7Reset &f{player}&7's wallet {currency} to starting balance."
+eco-bank-give: "{prefix}&7Gave &f{amount} &7to &f{player}&7's bank."
+eco-bank-take: "{prefix}&7Took &f{amount} &7from &f{player}&7's bank."
+eco-bank-set: "{prefix}&7Set &f{player}&7's banked {currency} to &f{amount}&7."
+eco-bank-reset: "{prefix}&7Reset &f{player}&7's banked {currency} to zero."
 eco-reload: "{prefix}&aReloaded config and language."
 
 # -----------------------------------------------------------------------------
@@ -94,4 +107,5 @@ usage-balance: "{prefix}&7Usage: &f/balance [player] [currency]"
 usage-bank: "{prefix}&7Usage: &f/bank <balance|transfer|withdraw> [amount] [currency]"
 usage-pay: "{prefix}&7Usage: &f/pay <player> <amount> [currency]"
 usage-baltop: "{prefix}&7Usage: &f/baltop [currency] [page]"
-usage-eco: "{prefix}&7Usage: &f/eco <give|take|set|reset|reload> [player] [amount] [currency]"
+usage-eco: "{prefix}&7Usage: &f/eco <give|take|set|reset|bank|reload> [player] [amount] [currency]"
+usage-eco-bank: "{prefix}&7Usage: &f/eco bank <give|take|set|reset> <player> [amount] [currency]"

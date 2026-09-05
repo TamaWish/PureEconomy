@@ -17,8 +17,11 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
+import java.util.regex.Pattern;
 
 public final class EconomyService {
+
+    private static final Pattern CURRENCY_ID = Pattern.compile("[a-z0-9_]+");
 
     private final PureEconomy plugin;
     private final YamlStorage storage;
@@ -45,6 +48,11 @@ public final class EconomyService {
                 continue;
             }
             String id = key.toLowerCase(Locale.ROOT);
+            if (!CURRENCY_ID.matcher(id).matches()) {
+                plugin.getLogger().warning("Ignoring invalid currency ID '" + key
+                        + "' (use lowercase letters, numbers, and underscores only).");
+                continue;
+            }
             BigDecimal start = bd(c.getString("starting-balance", "0"));
             BigDecimal max = bd(c.getString("max-balance", "-1"));
             Currency currency = new Currency(
@@ -197,6 +205,41 @@ public final class EconomyService {
             acc.setBank(currency.id(), amount);
         }
         return true;
+    }
+
+    public boolean addBank(UUID uuid, Currency currency, BigDecimal raw) {
+        PlayerAccount acc = account(uuid);
+        synchronized (acc) {
+            BigDecimal next = currency.normalize(acc.getBank(currency.id())).add(currency.normalize(raw));
+            if (next.compareTo(BigDecimal.ZERO) < 0) {
+                next = BigDecimal.ZERO;
+            }
+            if (currency.exceedsMax(next)) {
+                return false;
+            }
+            acc.setBank(currency.id(), next);
+        }
+        return true;
+    }
+
+    public boolean takeBank(UUID uuid, Currency currency, BigDecimal raw) {
+        BigDecimal amount = currency.normalize(raw);
+        if (amount.compareTo(BigDecimal.ZERO) < 0) {
+            return false;
+        }
+        PlayerAccount acc = account(uuid);
+        synchronized (acc) {
+            BigDecimal current = currency.normalize(acc.getBank(currency.id()));
+            if (current.compareTo(amount) < 0) {
+                return false;
+            }
+            acc.setBank(currency.id(), current.subtract(amount));
+        }
+        return true;
+    }
+
+    public void resetBank(UUID uuid, Currency currency) {
+        setBank(uuid, currency, BigDecimal.ZERO);
     }
 
     public boolean transferToBank(UUID uuid, Currency currency, BigDecimal raw) {

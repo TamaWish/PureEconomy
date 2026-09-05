@@ -4,6 +4,7 @@ import io.github.tamawish.pureeconomy.PureEconomy;
 import io.github.tamawish.pureeconomy.economy.Currency;
 import io.github.tamawish.pureeconomy.economy.EconomyService;
 import io.github.tamawish.pureeconomy.lang.Lang;
+import io.github.tamawish.pureeconomy.permission.Permissions.Node;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -29,7 +30,7 @@ public final class BalanceCommand implements CommandExecutor, TabCompleter {
         Lang lang = plugin.lang();
         EconomyService eco = plugin.economy();
 
-        if (!sender.hasPermission("pureeconomy.balance")) {
+        if (!plugin.permissions().has(sender, Node.BALANCE)) {
             lang.send(sender, "no-permission");
             return true;
         }
@@ -49,7 +50,7 @@ public final class BalanceCommand implements CommandExecutor, TabCompleter {
                 target = player.getUniqueId();
                 currency = maybe;
             } else {
-                if (!sender.hasPermission("pureeconomy.balance.others")) {
+                if (!plugin.permissions().has(sender, Node.BALANCE_OTHERS)) {
                     lang.send(sender, "no-permission");
                     return true;
                 }
@@ -60,7 +61,7 @@ public final class BalanceCommand implements CommandExecutor, TabCompleter {
                 }
             }
         } else {
-            if (!sender.hasPermission("pureeconomy.balance.others")) {
+            if (!plugin.permissions().has(sender, Node.BALANCE_OTHERS)) {
                 lang.send(sender, "no-permission");
                 return true;
             }
@@ -81,9 +82,13 @@ public final class BalanceCommand implements CommandExecutor, TabCompleter {
                 : eco.nameOf(target);
 
         if (currency != null) {
-            String amount = currency.format(eco.get(target, currency));
             String key = sender instanceof Player p && p.getUniqueId().equals(target) ? "balance-self" : "balance-other";
-            lang.send(sender, key, Lang.of("player", name, "currency", currency.name(), "amount", amount));
+            lang.send(sender, key, Lang.of(
+                    "player", name,
+                    "currency", currency.name(),
+                    "amount", currency.format(eco.get(target, currency)),
+                    "bank", currency.format(eco.getBank(target, currency))
+            ));
             return true;
         }
 
@@ -92,7 +97,8 @@ public final class BalanceCommand implements CommandExecutor, TabCompleter {
             Currency c = eco.currency(id);
             lang.send(sender, "balance-all-line", Lang.of(
                     "currency", c.name(),
-                    "amount", c.format(eco.get(target, c))
+                    "amount", c.format(eco.get(target, c)),
+                    "bank", c.format(eco.getBank(target, c))
             ));
         }
         return true;

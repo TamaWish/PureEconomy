@@ -11,8 +11,10 @@ import io.github.tamawish.pureeconomy.hook.MetricsHook;
 import io.github.tamawish.pureeconomy.hook.PlaceholderHook;
 import io.github.tamawish.pureeconomy.hook.VaultHook;
 import io.github.tamawish.pureeconomy.lang.Lang;
+import io.github.tamawish.pureeconomy.permission.Permissions;
 import io.github.tamawish.pureeconomy.storage.YamlStorage;
 import io.github.tamawish.pureeconomy.util.Schedulers;
+import io.github.tamawish.pureeconomy.util.UpdateChecker;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
@@ -28,8 +30,10 @@ public final class PureEconomy extends JavaPlugin implements Listener {
     private EconomyService economy;
     private YamlStorage storage;
     private Lang lang;
+    private Permissions permissions;
     private VaultHook vaultHook;
     private PlaceholderHook placeholderHook;
+    private UpdateChecker updateChecker;
     private Object autosaveTask;
 
     @Override
@@ -38,6 +42,8 @@ public final class PureEconomy extends JavaPlugin implements Listener {
         saveDefaultConfig();
 
         this.lang = new Lang(this);
+        this.permissions = new Permissions(this);
+        this.permissions.reload();
         this.storage = new YamlStorage(this);
         this.economy = new EconomyService(this, storage);
         this.economy.loadCurrencies();
@@ -62,9 +68,11 @@ public final class PureEconomy extends JavaPlugin implements Listener {
         this.placeholderHook.tryHook();
 
         MetricsHook.register(this);
+        this.updateChecker = new UpdateChecker(this);
 
         startAutosave();
         getLogger().info("PureEconomy enabled. Currencies: " + economy.currencyIds());
+        updateChecker.checkAsync();
     }
 
     @Override
@@ -86,8 +94,19 @@ public final class PureEconomy extends JavaPlugin implements Listener {
     public void reloadAll() {
         reloadConfig();
         lang.reload();
+        permissions.reload();
         economy.loadCurrencies();
+        if (vaultHook != null) {
+            vaultHook.tryHook();
+        }
+        if (placeholderHook != null) {
+            placeholderHook.tryHook();
+        }
         startAutosave();
+        if (updateChecker == null) {
+            updateChecker = new UpdateChecker(this);
+        }
+        updateChecker.checkAsync();
     }
 
     private void startAutosave() {
@@ -109,6 +128,9 @@ public final class PureEconomy extends JavaPlugin implements Listener {
         if (getConfig().getBoolean("create-on-join", true)) {
             economy.ensureAccount(player.getUniqueId(), player.getName());
         }
+        if (updateChecker != null) {
+            updateChecker.notifyPlayerIfNeeded(player);
+        }
     }
 
     @EventHandler
@@ -126,6 +148,10 @@ public final class PureEconomy extends JavaPlugin implements Listener {
 
     public Lang lang() {
         return lang;
+    }
+
+    public Permissions permissions() {
+        return permissions;
     }
 
     public FileConfiguration cfg() {

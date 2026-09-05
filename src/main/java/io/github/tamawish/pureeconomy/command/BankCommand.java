@@ -4,6 +4,7 @@ import io.github.tamawish.pureeconomy.PureEconomy;
 import io.github.tamawish.pureeconomy.economy.Currency;
 import io.github.tamawish.pureeconomy.economy.EconomyService;
 import io.github.tamawish.pureeconomy.lang.Lang;
+import io.github.tamawish.pureeconomy.permission.Permissions.Node;
 import io.github.tamawish.pureeconomy.util.Amounts;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -34,7 +35,7 @@ public final class BankCommand implements CommandExecutor, TabCompleter {
             lang.send(sender, "player-only");
             return true;
         }
-        if (!player.hasPermission("pureeconomy.bank")) {
+        if (!plugin.permissions().has(player, Node.BANK)) {
             lang.send(sender, "no-permission");
             return true;
         }
@@ -68,8 +69,7 @@ public final class BankCommand implements CommandExecutor, TabCompleter {
             return true;
         }
 
-        String permission = toBank ? "pureeconomy.bank.transfer" : "pureeconomy.bank.withdraw";
-        if (!player.hasPermission(permission)) {
+        if (!plugin.permissions().has(player, toBank ? Node.BANK_TRANSFER : Node.BANK_WITHDRAW)) {
             lang.send(sender, "no-permission");
             return true;
         }
@@ -98,6 +98,8 @@ public final class BankCommand implements CommandExecutor, TabCompleter {
             }
             if (eco.transferToBank(player.getUniqueId(), currency, amount)) {
                 lang.send(sender, "bank-transfer", Lang.of("amount", currency.format(amount)));
+            } else {
+                lang.send(sender, "bank-failed");
             }
             return true;
         }
@@ -112,6 +114,8 @@ public final class BankCommand implements CommandExecutor, TabCompleter {
         }
         if (eco.withdrawFromBank(player.getUniqueId(), currency, amount)) {
             lang.send(sender, "bank-withdraw", Lang.of("amount", currency.format(amount)));
+        } else {
+            lang.send(sender, "bank-failed");
         }
         return true;
     }

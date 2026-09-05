@@ -47,7 +47,7 @@ commands:
     usage: /baltop [currency] [page]
   eco:
     description: Admin economy tools
-    usage: /eco <give|take|set|reset|reload> ...
+    usage: /eco <give|take|set|reset|bank|reload> ...
   currency:
     description: List currencies
     aliases: [currencies]
@@ -58,6 +58,7 @@ commands:
 # -----------------------------------------------------------------------------
 
 # "true" grants the permission to all players; "op" grants it to operators.
+# Server admins can rename nodes and change defaults in config.yml.
 # pureeconomy.admin collects all administrative economy permissions.
 permissions:
   pureeconomy.balance:
@@ -88,6 +89,21 @@ permissions:
     default: op
   pureeconomy.eco.reload:
     default: op
+  pureeconomy.eco.bank:
+    default: op
+    children:
+      pureeconomy.eco.bank.give: true
+      pureeconomy.eco.bank.take: true
+      pureeconomy.eco.bank.set: true
+      pureeconomy.eco.bank.reset: true
+  pureeconomy.eco.bank.give:
+    default: op
+  pureeconomy.eco.bank.take:
+    default: op
+  pureeconomy.eco.bank.set:
+    default: op
+  pureeconomy.eco.bank.reset:
+    default: op
   pureeconomy.admin:
     default: op
     children:
@@ -97,4 +113,5 @@ permissions:
       pureeconomy.eco.set: true
       pureeconomy.eco.reset: true
       pureeconomy.eco.reload: true
+      pureeconomy.eco.bank: true
       pureeconomy.balance.others: true

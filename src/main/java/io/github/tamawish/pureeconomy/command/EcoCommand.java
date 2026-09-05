@@ -4,6 +4,7 @@ import io.github.tamawish.pureeconomy.PureEconomy;
 import io.github.tamawish.pureeconomy.economy.Currency;
 import io.github.tamawish.pureeconomy.economy.EconomyService;
 import io.github.tamawish.pureeconomy.lang.Lang;
+import io.github.tamawish.pureeconomy.permission.Permissions.Node;
 import io.github.tamawish.pureeconomy.util.Amounts;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -12,13 +13,15 @@ import org.bukkit.command.TabCompleter;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 
 public final class EcoCommand implements CommandExecutor, TabCompleter {
+
+    private static final List<String> SUBS = List.of("give", "take", "set", "reset", "bank", "reload");
+    private static final List<String> BANK_ACTIONS = List.of("give", "take", "set", "reset");
 
     private final PureEconomy plugin;
 
@@ -37,13 +40,17 @@ public final class EcoCommand implements CommandExecutor, TabCompleter {
 
         String sub = args[0].toLowerCase(Locale.ROOT);
         if (sub.equals("reload")) {
-            if (!sender.hasPermission("pureeconomy.eco.reload")) {
+            if (!plugin.permissions().has(sender, Node.ECO_RELOAD)) {
                 lang.send(sender, "no-permission");
                 return true;
             }
             plugin.reloadAll();
             lang.send(sender, "eco-reload");
             return true;
+        }
+
+        if (sub.equals("bank")) {
+            return handleBank(sender, args);
         }
 
         if (args.length < 2) {
@@ -54,7 +61,7 @@ public final class EcoCommand implements CommandExecutor, TabCompleter {
         EconomyService eco = plugin.economy();
         UUID target = eco.resolve(args[1]);
         if (target == null) {
-            lang.send(sender, "unknown-player", Lang.of("player", args[1]));
+            lang.send(sender, "account-missing", Lang.of("player", args[1]));
             return true;
         }
 
@@ -71,7 +78,7 @@ public final class EcoCommand implements CommandExecutor, TabCompleter {
         String playerName = eco.nameOf(target);
 
         if (sub.equals("reset")) {
-            if (!sender.hasPermission("pureeconomy.eco.reset")) {
+            if (!plugin.permissions().has(sender, Node.ECO_RESET)) {
                 lang.send(sender, "no-permission");
                 return true;
             }
@@ -100,7 +107,7 @@ public final class EcoCommand implements CommandExecutor, TabCompleter {
 
         switch (sub) {
             case "give" -> {
-                if (!sender.hasPermission("pureeconomy.eco.give")) {
+                if (!plugin.permissions().has(sender, Node.ECO_GIVE)) {
                     lang.send(sender, "no-permission");
                     return true;
                 }
@@ -111,7 +118,7 @@ public final class EcoCommand implements CommandExecutor, TabCompleter {
                 lang.send(sender, "eco-give", Lang.of("amount", currency.format(amount), "player", playerName));
             }
             case "take" -> {
-                if (!sender.hasPermission("pureeconomy.eco.take")) {
+                if (!plugin.permissions().has(sender, Node.ECO_TAKE)) {
                     lang.send(sender, "no-permission");
                     return true;
                 }
@@ -122,7 +129,7 @@ public final class EcoCommand implements CommandExecutor, TabCompleter {
                 lang.send(sender, "eco-take", Lang.of("amount", currency.format(amount), "player", playerName));
             }
             case "set" -> {
-                if (!sender.hasPermission("pureeconomy.eco.set")) {
+                if (!plugin.permissions().has(sender, Node.ECO_SET)) {
                     lang.send(sender, "no-permission");
                     return true;
                 }
@@ -141,15 +148,128 @@ public final class EcoCommand implements CommandExecutor, TabCompleter {
         return true;
     }
 
+    private boolean handleBank(CommandSender sender, String[] args) {
+        Lang lang = plugin.lang();
+        if (args.length < 3) {
+            lang.send(sender, "usage-eco-bank");
+            return true;
+        }
+
+        String action = args[1].toLowerCase(Locale.ROOT);
+        if (!BANK_ACTIONS.contains(action)) {
+            lang.send(sender, "usage-eco-bank");
+            return true;
+        }
+
+        EconomyService eco = plugin.economy();
+        UUID target = eco.resolve(args[2]);
+        if (target == null) {
+            lang.send(sender, "account-missing", Lang.of("player", args[2]));
+            return true;
+        }
+
+        String playerName = eco.nameOf(target);
+
+        if (action.equals("reset")) {
+            if (!plugin.permissions().has(sender, Node.ECO_BANK_RESET)) {
+                lang.send(sender, "no-permission");
+                return true;
+            }
+            Currency currency = args.length >= 4 ? eco.currency(args[3]) : eco.defaultCurrency();
+            if (currency == null) {
+                lang.send(sender, "unknown-currency", Lang.of("currency", args.length >= 4 ? args[3] : eco.defaultId()));
+                return true;
+            }
+            eco.resetBank(target, currency);
+            lang.send(sender, "eco-bank-reset", Lang.of("player", playerName, "currency", currency.name()));
+            return true;
+        }
+
+        if (args.length < 4) {
+            lang.send(sender, "usage-eco-bank");
+            return true;
+        }
+
+        BigDecimal amount = Amounts.parse(args[3]);
+        if (amount == null) {
+            lang.send(sender, "invalid-amount");
+            return true;
+        }
+
+        Currency currency = args.length >= 5 ? eco.currency(args[4]) : eco.defaultCurrency();
+        if (currency == null) {
+            lang.send(sender, "unknown-currency", Lang.of("currency", args.length >= 5 ? args[4] : eco.defaultId()));
+            return true;
+        }
+
+        switch (action) {
+            case "give" -> {
+                if (!plugin.permissions().has(sender, Node.ECO_BANK_GIVE)) {
+                    lang.send(sender, "no-permission");
+                    return true;
+                }
+                if (!eco.addBank(target, currency, amount)) {
+                    lang.send(sender, "bank-max-balance", Lang.of("currency", currency.name()));
+                    return true;
+                }
+                lang.send(sender, "eco-bank-give", Lang.of("amount", currency.format(amount), "player", playerName));
+            }
+            case "take" -> {
+                if (!plugin.permissions().has(sender, Node.ECO_BANK_TAKE)) {
+                    lang.send(sender, "no-permission");
+                    return true;
+                }
+                if (!eco.takeBank(target, currency, amount)) {
+                    lang.send(sender, "not-enough", Lang.of("currency", currency.name()));
+                    return true;
+                }
+                lang.send(sender, "eco-bank-take", Lang.of("amount", currency.format(amount), "player", playerName));
+            }
+            case "set" -> {
+                if (!plugin.permissions().has(sender, Node.ECO_BANK_SET)) {
+                    lang.send(sender, "no-permission");
+                    return true;
+                }
+                if (!eco.setBank(target, currency, amount)) {
+                    lang.send(sender, "bank-max-balance", Lang.of("currency", currency.name()));
+                    return true;
+                }
+                lang.send(sender, "eco-bank-set", Lang.of(
+                        "player", playerName,
+                        "currency", currency.name(),
+                        "amount", currency.format(amount)
+                ));
+            }
+            default -> lang.send(sender, "usage-eco-bank");
+        }
+        return true;
+    }
+
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         if (args.length == 1) {
-            return filter(Arrays.asList("give", "take", "set", "reset", "reload"), args[0]);
+            return filter(SUBS, args[0]);
         }
-        if (args.length == 2 && !args[0].equalsIgnoreCase("reload")) {
-            List<String> names = new ArrayList<>();
-            plugin.getServer().getOnlinePlayers().forEach(p -> names.add(p.getName()));
-            return filter(names, args[1]);
+        if (args[0].equalsIgnoreCase("reload")) {
+            return Collections.emptyList();
+        }
+        if (args[0].equalsIgnoreCase("bank")) {
+            if (args.length == 2) {
+                return filter(BANK_ACTIONS, args[1]);
+            }
+            if (args.length == 3) {
+                return filter(onlineNames(), args[2]);
+            }
+            if (args.length == 4 && args[1].equalsIgnoreCase("reset")) {
+                return filter(plugin.economy().currencyIds(), args[3]);
+            }
+            if (args.length == 5 && !args[1].equalsIgnoreCase("reset")) {
+                return filter(plugin.economy().currencyIds(), args[4]);
+            }
+            return Collections.emptyList();
+        }
+        if (args.length == 2) {
+            return filter(onlineNames(), args[1]);
         }
         if (args.length == 3 && args[0].equalsIgnoreCase("reset")) {
             return filter(plugin.economy().currencyIds(), args[2]);
@@ -158,6 +278,12 @@ public final class EcoCommand implements CommandExecutor, TabCompleter {
             return filter(plugin.economy().currencyIds(), args[3]);
         }
         return Collections.emptyList();
+    }
+
+    private List<String> onlineNames() {
+        List<String> names = new ArrayList<>();
+        plugin.getServer().getOnlinePlayers().forEach(p -> names.add(p.getName()));
+        return names;
     }
 
     private static List<String> filter(List<String> in, String prefix) {

@@ -4,6 +4,7 @@ import io.github.tamawish.pureeconomy.PureEconomy;
 import io.github.tamawish.pureeconomy.economy.Currency;
 import io.github.tamawish.pureeconomy.economy.EconomyService;
 import io.github.tamawish.pureeconomy.lang.Lang;
+import io.github.tamawish.pureeconomy.permission.Permissions.Node;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -26,7 +27,7 @@ public final class BaltopCommand implements CommandExecutor, TabCompleter {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         Lang lang = plugin.lang();
-        if (!sender.hasPermission("pureeconomy.baltop")) {
+        if (!plugin.permissions().has(sender, Node.BALTOP)) {
             lang.send(sender, "no-permission");
             return true;
         }

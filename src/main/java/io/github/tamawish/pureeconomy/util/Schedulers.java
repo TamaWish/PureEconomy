@@ -1,6 +1,7 @@
 package io.github.tamawish.pureeconomy.util;
 
 import org.bukkit.Bukkit;
+import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitTask;
 
@@ -43,6 +44,15 @@ public final class Schedulers {
             Bukkit.getAsyncScheduler().runNow(plugin, scheduled -> task.run());
         } catch (NoSuchMethodError | NoClassDefFoundError e) {
             Bukkit.getScheduler().runTaskAsynchronously(plugin, task);
+        }
+    }
+
+    public static void runAtEntityLater(Plugin plugin, Player player, Runnable task, long delayTicks) {
+        try {
+            player.getScheduler().runDelayed(plugin, scheduled -> task.run(), null,
+                    Math.max(1L, delayTicks));
+        } catch (NoSuchMethodError | NoClassDefFoundError e) {
+            Bukkit.getScheduler().runTaskLater(plugin, task, Math.max(1L, delayTicks));
         }
     }
 
