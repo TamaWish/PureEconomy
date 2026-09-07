@@ -2,11 +2,7 @@ package io.github.tamawish.pureeconomy.economy;
 
 import io.github.tamawish.pureeconomy.PureEconomy;
 import io.github.tamawish.pureeconomy.storage.YamlStorage;
-import org.bukkit.Bukkit;
-import org.bukkit.OfflinePlayer;
-import org.bukkit.entity.Player;
-import org.bukkit.configuration.ConfigurationSection;
-
+import io.github.tamawish.pureeconomy.util.Schedulers;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -18,417 +14,643 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
+import org.bukkit.Bukkit;
+import org.bukkit.OfflinePlayer;
+import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.entity.Player;
 
+/** In-memory multi-currency economy service backed by {@link YamlStorage}. */
 public final class EconomyService {
 
-    private static final Pattern CURRENCY_ID = Pattern.compile("[a-z0-9_]+");
+  private static final Pattern CURRENCY_ID = Pattern.compile("[a-z0-9_]+");
 
-    private final PureEconomy plugin;
-    private final YamlStorage storage;
-    private final Map<String, Currency> currencies = new ConcurrentHashMap<>();
-    private final Map<UUID, PlayerAccount> accounts = new ConcurrentHashMap<>();
-    private String defaultId = "coins";
+  private final PureEconomy plugin;
+  private final YamlStorage storage;
+  private final Map<String, Currency> currencies = new ConcurrentHashMap<>();
+  private final Map<UUID, PlayerAccount> accounts = new ConcurrentHashMap<>();
+  private String defaultId = "coins";
 
-    public EconomyService(PureEconomy plugin, YamlStorage storage) {
-        this.plugin = plugin;
-        this.storage = storage;
+  /**
+   * Creates the economy service.
+   *
+   * @param plugin owning plugin
+   * @param storage YAML persistence layer
+   */
+  public EconomyService(PureEconomy plugin, YamlStorage storage) {
+    this.plugin = plugin;
+    this.storage = storage;
+  }
+
+  /** Reloads currency definitions from {@code config.yml}. */
+  public void loadCurrencies() {
+    currencies.clear();
+    defaultId = plugin.getConfig().getString("default-currency", "coins").toLowerCase(Locale.ROOT);
+    ConfigurationSection section = plugin.getConfig().getConfigurationSection("currencies");
+    if (section == null) {
+      plugin.getLogger().warning("No currencies defined in config.yml");
+      return;
     }
-
-    public void loadCurrencies() {
-        currencies.clear();
-        defaultId = plugin.getConfig().getString("default-currency", "coins").toLowerCase(Locale.ROOT);
-        ConfigurationSection section = plugin.getConfig().getConfigurationSection("currencies");
-        if (section == null) {
-            plugin.getLogger().warning("No currencies defined in config.yml");
-            return;
-        }
-        for (String key : section.getKeys(false)) {
-            ConfigurationSection c = section.getConfigurationSection(key);
-            if (c == null) {
-                continue;
-            }
-            String id = key.toLowerCase(Locale.ROOT);
-            if (!CURRENCY_ID.matcher(id).matches()) {
-                plugin.getLogger().warning("Ignoring invalid currency ID '" + key
-                        + "' (use lowercase letters, numbers, and underscores only).");
-                continue;
-            }
-            BigDecimal start = bd(c.getString("starting-balance", "0"));
-            BigDecimal max = bd(c.getString("max-balance", "-1"));
-            Currency currency = new Currency(
-                    id,
-                    c.getString("singular", id),
-                    c.getString("plural", id),
-                    c.getString("symbol", ""),
-                    c.getInt("decimals", 2),
-                    start,
-                    max,
-                    c.getBoolean("payable", true)
-            );
-            currencies.put(id, currency);
-        }
-        if (!currencies.containsKey(defaultId) && !currencies.isEmpty()) {
-            defaultId = currencies.keySet().iterator().next();
-            plugin.getLogger().warning("default-currency missing; using " + defaultId);
-        }
+    for (String key : section.getKeys(false)) {
+      ConfigurationSection currencySection = section.getConfigurationSection(key);
+      if (currencySection == null) {
+        continue;
+      }
+      String id = key.toLowerCase(Locale.ROOT);
+      if (!CURRENCY_ID.matcher(id).matches()) {
+        plugin
+            .getLogger()
+            .warning(
+                "Ignoring invalid currency ID '"
+                    + key
+                    + "' (use lowercase letters, numbers, and underscores only).");
+        continue;
+      }
+      BigDecimal start = bd(currencySection.getString("starting-balance", "0"));
+      BigDecimal max = bd(currencySection.getString("max-balance", "-1"));
+      Currency currency =
+          new Currency(
+              id,
+              currencySection.getString("singular", id),
+              currencySection.getString("plural", id),
+              currencySection.getString("symbol", ""),
+              currencySection.getInt("decimals", 2),
+              start,
+              max,
+              currencySection.getBoolean("payable", true));
+      currencies.put(id, currency);
     }
-
-    public boolean hasCurrencies() {
-        return !currencies.isEmpty();
+    if (!currencies.containsKey(defaultId) && !currencies.isEmpty()) {
+      defaultId = currencies.keySet().iterator().next();
+      plugin.getLogger().warning("default-currency missing; using " + defaultId);
     }
+  }
 
-    public Currency currency(String id) {
-        if (id == null || id.isBlank()) {
-            return defaultCurrency();
-        }
-        return currencies.get(id.toLowerCase(Locale.ROOT));
+  /**
+   * Returns whether at least one currency is loaded.
+   *
+   * @return {@code true} when currencies were configured successfully
+   */
+  public boolean hasCurrencies() {
+    return !currencies.isEmpty();
+  }
+
+  /**
+   * Resolves a currency by id, falling back to the default when blank.
+   *
+   * @param id currency id; blank selects the default
+   * @return matching currency, or {@code null} when unknown
+   */
+  public Currency currency(String id) {
+    if (id == null || id.isBlank()) {
+      return defaultCurrency();
     }
+    return currencies.get(id.toLowerCase(Locale.ROOT));
+  }
 
-    public Currency defaultCurrency() {
-        return currencies.get(defaultId);
-    }
+  /**
+   * Returns the configured default currency.
+   *
+   * @return default currency, or {@code null} when none are loaded
+   */
+  public Currency defaultCurrency() {
+    return currencies.get(defaultId);
+  }
 
-    public String defaultId() {
-        return defaultId;
-    }
+  /**
+   * Returns the default currency id.
+   *
+   * @return lowercase default id
+   */
+  public String defaultId() {
+    return defaultId;
+  }
 
-    public List<String> currencyIds() {
-        List<String> ids = new ArrayList<>(currencies.keySet());
-        Collections.sort(ids);
-        return ids;
-    }
+  /**
+   * Returns sorted currency ids.
+   *
+   * @return mutable sorted copy of currency ids
+   */
+  public List<String> currencyIds() {
+    List<String> ids = new ArrayList<>(currencies.keySet());
+    Collections.sort(ids);
+    return ids;
+  }
 
-    public Map<String, Currency> currencies() {
-        return Collections.unmodifiableMap(currencies);
-    }
+  /**
+   * Returns an unmodifiable view of loaded currencies.
+   *
+   * @return currencies keyed by id
+   */
+  public Map<String, Currency> currencies() {
+    return Collections.unmodifiableMap(currencies);
+  }
 
-    public PlayerAccount account(UUID uuid) {
-        return accounts.computeIfAbsent(uuid, id -> {
-            PlayerAccount loaded = storage.load(id);
-            if (loaded == null) {
-                loaded = new PlayerAccount(id);
-            }
-            seedStarting(loaded);
-            return loaded;
+  /**
+   * Loads or creates the cached account for a player.
+   *
+   * @param uuid player unique id
+   * @return in-memory account
+   */
+  public PlayerAccount account(UUID uuid) {
+    return accounts.computeIfAbsent(
+        uuid,
+        id -> {
+          PlayerAccount loaded = storage.load(id);
+          if (loaded == null) {
+            loaded = new PlayerAccount(id);
+          }
+          seedStarting(loaded);
+          return loaded;
         });
-    }
+  }
 
-    public void ensureAccount(UUID uuid, String name) {
-        PlayerAccount acc = account(uuid);
-        synchronized (acc) {
-            if (name != null) {
-                acc.setName(name);
-            }
-            seedStarting(acc);
-        }
+  /**
+   * Ensures an account exists and records the latest player name.
+   *
+   * @param uuid player unique id
+   * @param name latest known name; may be {@code null}
+   */
+  public void ensureAccount(UUID uuid, String name) {
+    PlayerAccount account = account(uuid);
+    synchronized (account) {
+      if (name != null) {
+        account.setName(name);
+      }
+      seedStarting(account);
     }
+  }
 
-    private void seedStarting(PlayerAccount acc) {
-        for (Currency currency : currencies.values()) {
-            if (!acc.has(currency.id())) {
-                acc.set(currency.id(), currency.starting());
-            }
-        }
+  private void seedStarting(PlayerAccount account) {
+    for (Currency currency : currencies.values()) {
+      if (!account.has(currency.id())) {
+        account.set(currency.id(), currency.starting());
+      }
     }
+  }
 
-    public BigDecimal get(UUID uuid, Currency currency) {
-        PlayerAccount acc = account(uuid);
-        synchronized (acc) {
-            return currency.normalize(acc.get(currency.id()));
-        }
+  /**
+   * Returns a player's wallet balance for a currency.
+   *
+   * @param uuid player unique id
+   * @param currency currency definition
+   * @return normalized wallet balance
+   */
+  public BigDecimal get(UUID uuid, Currency currency) {
+    PlayerAccount account = account(uuid);
+    synchronized (account) {
+      return currency.normalize(account.get(currency.id()));
     }
+  }
 
-    public boolean has(UUID uuid, Currency currency, BigDecimal amount) {
-        return get(uuid, currency).compareTo(currency.normalize(amount)) >= 0;
+  /**
+   * Returns whether the wallet holds at least {@code amount}.
+   *
+   * @param uuid player unique id
+   * @param currency currency definition
+   * @param amount required amount
+   * @return {@code true} when the wallet balance is sufficient
+   */
+  public boolean has(UUID uuid, Currency currency, BigDecimal amount) {
+    return get(uuid, currency).compareTo(currency.normalize(amount)) >= 0;
+  }
+
+  /**
+   * Sets a wallet balance.
+   *
+   * @param uuid player unique id
+   * @param currency currency definition
+   * @param raw desired amount before normalization
+   * @return {@code false} when the amount would exceed the currency maximum
+   */
+  public boolean set(UUID uuid, Currency currency, BigDecimal raw) {
+    return setBalance(uuid, currency, raw, false);
+  }
+
+  /**
+   * Adds to a wallet balance.
+   *
+   * @param uuid player unique id
+   * @param currency currency definition
+   * @param raw amount to add before normalization
+   * @return {@code false} when the result would exceed the currency maximum
+   */
+  public boolean add(UUID uuid, Currency currency, BigDecimal raw) {
+    return addBalance(uuid, currency, raw, false);
+  }
+
+  /**
+   * Removes from a wallet balance.
+   *
+   * @param uuid player unique id
+   * @param currency currency definition
+   * @param raw amount to remove before normalization
+   * @return {@code false} when funds are insufficient
+   */
+  public boolean take(UUID uuid, Currency currency, BigDecimal raw) {
+    return takeBalance(uuid, currency, raw, false);
+  }
+
+  /**
+   * Returns a player's bank balance for a currency.
+   *
+   * @param uuid player unique id
+   * @param currency currency definition
+   * @return normalized bank balance
+   */
+  public BigDecimal getBank(UUID uuid, Currency currency) {
+    PlayerAccount account = account(uuid);
+    synchronized (account) {
+      return currency.normalize(account.getBank(currency.id()));
     }
+  }
 
-    public boolean set(UUID uuid, Currency currency, BigDecimal raw) {
-        BigDecimal amount = currency.normalize(raw);
-        if (amount.compareTo(BigDecimal.ZERO) < 0) {
-            amount = BigDecimal.ZERO;
-        }
-        if (currency.exceedsMax(amount)) {
+  /**
+   * Sets a bank balance.
+   *
+   * @param uuid player unique id
+   * @param currency currency definition
+   * @param raw desired amount before normalization
+   * @return {@code false} when the amount is negative or exceeds the maximum
+   */
+  public boolean setBank(UUID uuid, Currency currency, BigDecimal raw) {
+    return setBalance(uuid, currency, raw, true);
+  }
+
+  /**
+   * Adds to a bank balance.
+   *
+   * @param uuid player unique id
+   * @param currency currency definition
+   * @param raw amount to add before normalization
+   * @return {@code false} when the result would exceed the currency maximum
+   */
+  public boolean addBank(UUID uuid, Currency currency, BigDecimal raw) {
+    return addBalance(uuid, currency, raw, true);
+  }
+
+  /**
+   * Removes from a bank balance.
+   *
+   * @param uuid player unique id
+   * @param currency currency definition
+   * @param raw amount to remove before normalization
+   * @return {@code false} when funds are insufficient
+   */
+  public boolean takeBank(UUID uuid, Currency currency, BigDecimal raw) {
+    return takeBalance(uuid, currency, raw, true);
+  }
+
+  /**
+   * Clears a bank balance to zero.
+   *
+   * @param uuid player unique id
+   * @param currency currency definition
+   */
+  public void resetBank(UUID uuid, Currency currency) {
+    setBank(uuid, currency, BigDecimal.ZERO);
+  }
+
+  /**
+   * Moves funds from wallet to bank atomically.
+   *
+   * @param uuid player unique id
+   * @param currency currency definition
+   * @param raw amount to move before normalization
+   * @return {@code false} when the wallet lacks funds or the bank would exceed its maximum
+   */
+  public boolean transferToBank(UUID uuid, Currency currency, BigDecimal raw) {
+    BigDecimal amount = currency.normalize(raw);
+    if (amount.compareTo(BigDecimal.ZERO) <= 0) {
+      return false;
+    }
+    PlayerAccount account = account(uuid);
+    synchronized (account) {
+      BigDecimal wallet = currency.normalize(account.get(currency.id()));
+      BigDecimal bank = currency.normalize(account.getBank(currency.id()));
+      BigDecimal bankNext = bank.add(amount);
+      if (wallet.compareTo(amount) < 0 || currency.exceedsMax(bankNext)) {
+        return false;
+      }
+      account.set(currency.id(), wallet.subtract(amount));
+      account.setBank(currency.id(), bankNext);
+      return true;
+    }
+  }
+
+  /**
+   * Moves funds from bank to wallet atomically.
+   *
+   * @param uuid player unique id
+   * @param currency currency definition
+   * @param raw amount to move before normalization
+   * @return {@code false} when the bank lacks funds or the wallet would exceed its maximum
+   */
+  public boolean withdrawFromBank(UUID uuid, Currency currency, BigDecimal raw) {
+    BigDecimal amount = currency.normalize(raw);
+    if (amount.compareTo(BigDecimal.ZERO) <= 0) {
+      return false;
+    }
+    PlayerAccount account = account(uuid);
+    synchronized (account) {
+      BigDecimal wallet = currency.normalize(account.get(currency.id()));
+      BigDecimal bank = currency.normalize(account.getBank(currency.id()));
+      BigDecimal walletNext = wallet.add(amount);
+      if (bank.compareTo(amount) < 0 || currency.exceedsMax(walletNext)) {
+        return false;
+      }
+      account.setBank(currency.id(), bank.subtract(amount));
+      account.set(currency.id(), walletNext);
+      return true;
+    }
+  }
+
+  /**
+   * Moves funds between two player wallets atomically.
+   *
+   * @param from sender unique id
+   * @param to recipient unique id
+   * @param currency currency definition
+   * @param raw amount to move before normalization
+   * @return {@code false} when the currency is not payable, funds are missing, or the max is hit
+   */
+  public boolean transfer(UUID from, UUID to, Currency currency, BigDecimal raw) {
+    BigDecimal amount = currency.normalize(raw);
+    if (amount.compareTo(BigDecimal.ZERO) <= 0 || !currency.payable()) {
+      return false;
+    }
+    return withAccounts(
+        from,
+        to,
+        () -> {
+          PlayerAccount fromAccount = account(from);
+          PlayerAccount toAccount = account(to);
+          BigDecimal fromBalance = currency.normalize(fromAccount.get(currency.id()));
+          if (fromBalance.compareTo(amount) < 0) {
             return false;
-        }
-        PlayerAccount acc = account(uuid);
-        synchronized (acc) {
-            acc.set(currency.id(), amount);
-        }
-        return true;
-    }
-
-    public boolean add(UUID uuid, Currency currency, BigDecimal raw) {
-        PlayerAccount acc = account(uuid);
-        synchronized (acc) {
-            BigDecimal next = currency.normalize(acc.get(currency.id())).add(currency.normalize(raw));
-            if (next.compareTo(BigDecimal.ZERO) < 0) {
-                next = BigDecimal.ZERO;
-            }
-            if (currency.exceedsMax(next)) {
-                return false;
-            }
-            acc.set(currency.id(), next);
-        }
-        return true;
-    }
-
-    public boolean take(UUID uuid, Currency currency, BigDecimal raw) {
-        BigDecimal amount = currency.normalize(raw);
-        if (amount.compareTo(BigDecimal.ZERO) < 0) {
+          }
+          BigDecimal targetNext = currency.normalize(toAccount.get(currency.id())).add(amount);
+          if (currency.exceedsMax(targetNext)) {
             return false;
-        }
-        PlayerAccount acc = account(uuid);
-        synchronized (acc) {
-            BigDecimal current = currency.normalize(acc.get(currency.id()));
-            if (current.compareTo(amount) < 0) {
-                return false;
-            }
-            acc.set(currency.id(), current.subtract(amount));
-        }
-        return true;
-    }
-
-    public BigDecimal getBank(UUID uuid, Currency currency) {
-        PlayerAccount acc = account(uuid);
-        synchronized (acc) {
-            return currency.normalize(acc.getBank(currency.id()));
-        }
-    }
-
-    public boolean setBank(UUID uuid, Currency currency, BigDecimal raw) {
-        BigDecimal amount = currency.normalize(raw);
-        if (amount.compareTo(BigDecimal.ZERO) < 0 || currency.exceedsMax(amount)) {
-            return false;
-        }
-        PlayerAccount acc = account(uuid);
-        synchronized (acc) {
-            acc.setBank(currency.id(), amount);
-        }
-        return true;
-    }
-
-    public boolean addBank(UUID uuid, Currency currency, BigDecimal raw) {
-        PlayerAccount acc = account(uuid);
-        synchronized (acc) {
-            BigDecimal next = currency.normalize(acc.getBank(currency.id())).add(currency.normalize(raw));
-            if (next.compareTo(BigDecimal.ZERO) < 0) {
-                next = BigDecimal.ZERO;
-            }
-            if (currency.exceedsMax(next)) {
-                return false;
-            }
-            acc.setBank(currency.id(), next);
-        }
-        return true;
-    }
-
-    public boolean takeBank(UUID uuid, Currency currency, BigDecimal raw) {
-        BigDecimal amount = currency.normalize(raw);
-        if (amount.compareTo(BigDecimal.ZERO) < 0) {
-            return false;
-        }
-        PlayerAccount acc = account(uuid);
-        synchronized (acc) {
-            BigDecimal current = currency.normalize(acc.getBank(currency.id()));
-            if (current.compareTo(amount) < 0) {
-                return false;
-            }
-            acc.setBank(currency.id(), current.subtract(amount));
-        }
-        return true;
-    }
-
-    public void resetBank(UUID uuid, Currency currency) {
-        setBank(uuid, currency, BigDecimal.ZERO);
-    }
-
-    public boolean transferToBank(UUID uuid, Currency currency, BigDecimal raw) {
-        BigDecimal amount = currency.normalize(raw);
-        if (amount.compareTo(BigDecimal.ZERO) <= 0) {
-            return false;
-        }
-        PlayerAccount acc = account(uuid);
-        synchronized (acc) {
-            BigDecimal wallet = currency.normalize(acc.get(currency.id()));
-            BigDecimal bank = currency.normalize(acc.getBank(currency.id()));
-            BigDecimal bankNext = bank.add(amount);
-            if (wallet.compareTo(amount) < 0 || currency.exceedsMax(bankNext)) {
-                return false;
-            }
-            acc.set(currency.id(), wallet.subtract(amount));
-            acc.setBank(currency.id(), bankNext);
-            return true;
-        }
-    }
-
-    public boolean withdrawFromBank(UUID uuid, Currency currency, BigDecimal raw) {
-        BigDecimal amount = currency.normalize(raw);
-        if (amount.compareTo(BigDecimal.ZERO) <= 0) {
-            return false;
-        }
-        PlayerAccount acc = account(uuid);
-        synchronized (acc) {
-            BigDecimal wallet = currency.normalize(acc.get(currency.id()));
-            BigDecimal bank = currency.normalize(acc.getBank(currency.id()));
-            BigDecimal walletNext = wallet.add(amount);
-            if (bank.compareTo(amount) < 0 || currency.exceedsMax(walletNext)) {
-                return false;
-            }
-            acc.setBank(currency.id(), bank.subtract(amount));
-            acc.set(currency.id(), walletNext);
-            return true;
-        }
-    }
-
-    public boolean transfer(UUID from, UUID to, Currency currency, BigDecimal raw) {
-        BigDecimal amount = currency.normalize(raw);
-        if (amount.compareTo(BigDecimal.ZERO) <= 0 || !currency.payable()) {
-            return false;
-        }
-        return withAccounts(from, to, () -> {
-            PlayerAccount fromAcc = account(from);
-            PlayerAccount toAcc = account(to);
-            BigDecimal fromBal = currency.normalize(fromAcc.get(currency.id()));
-            if (fromBal.compareTo(amount) < 0) {
-                return false;
-            }
-            BigDecimal targetNext = currency.normalize(toAcc.get(currency.id())).add(amount);
-            if (currency.exceedsMax(targetNext)) {
-                return false;
-            }
-            fromAcc.set(currency.id(), fromBal.subtract(amount));
-            toAcc.set(currency.id(), targetNext);
-            return true;
+          }
+          fromAccount.set(currency.id(), fromBalance.subtract(amount));
+          toAccount.set(currency.id(), targetNext);
+          return true;
         });
-    }
+  }
 
-    public void reset(UUID uuid, Currency currency) {
-        set(uuid, currency, currency.starting());
-    }
+  /**
+   * Resets a wallet to the currency starting balance without changing the bank.
+   *
+   * @param uuid player unique id
+   * @param currency currency definition
+   */
+  public void reset(UUID uuid, Currency currency) {
+    set(uuid, currency, currency.starting());
+  }
 
-    public List<BalanceEntry> top(Currency currency, int page, int pageSize) {
-        List<BalanceEntry> list = new ArrayList<>();
-        for (UUID uuid : storage.allKnownUuids()) {
-            PlayerAccount acc = account(uuid);
-            BigDecimal bal;
-            String name;
-            synchronized (acc) {
-                bal = currency.normalize(acc.get(currency.id()));
-                name = acc.name();
-            }
-            if (bal.compareTo(BigDecimal.ZERO) <= 0) {
-                continue;
-            }
-            if (name == null) {
-                OfflinePlayer off = Bukkit.getOfflinePlayer(uuid);
-                name = off.getName() != null ? off.getName() : uuid.toString();
-            }
-            list.add(new BalanceEntry(uuid, name, bal));
-        }
-        list.sort(Comparator.comparing((BalanceEntry e) -> e.balance()).reversed());
-        int from = Math.max(0, (page - 1) * pageSize);
-        if (from >= list.size()) {
-            return Collections.emptyList();
-        }
-        int to = Math.min(list.size(), from + pageSize);
-        return list.subList(from, to);
+  /**
+   * Returns one page of richest wallets for a currency.
+   *
+   * @param currency currency definition
+   * @param page one-based page number
+   * @param pageSize entries per page
+   * @return page slice, possibly empty
+   */
+  public List<BalanceEntry> top(Currency currency, int page, int pageSize) {
+    List<BalanceEntry> list = new ArrayList<>();
+    for (UUID uuid : storage.allKnownUuids()) {
+      PlayerAccount account = account(uuid);
+      BigDecimal balance;
+      String name;
+      synchronized (account) {
+        balance = currency.normalize(account.get(currency.id()));
+        name = account.name();
+      }
+      if (balance.compareTo(BigDecimal.ZERO) <= 0) {
+        continue;
+      }
+      if (name == null) {
+        OfflinePlayer offline = Bukkit.getOfflinePlayer(uuid);
+        name = offline.getName() != null ? offline.getName() : uuid.toString();
+      }
+      list.add(new BalanceEntry(uuid, name, balance));
     }
+    list.sort(Comparator.comparing(BalanceEntry::balance).reversed());
+    int from = Math.max(0, (page - 1) * pageSize);
+    if (from >= list.size()) {
+      return Collections.emptyList();
+    }
+    int to = Math.min(list.size(), from + pageSize);
+    return list.subList(from, to);
+  }
 
-    public int topPages(Currency currency, int pageSize) {
-        int count = 0;
-        for (UUID uuid : storage.allKnownUuids()) {
-            PlayerAccount acc = account(uuid);
-            synchronized (acc) {
-                if (acc.get(currency.id()).compareTo(BigDecimal.ZERO) > 0) {
-                    count++;
-                }
-            }
+  /**
+   * Returns how many baltop pages exist for a currency.
+   *
+   * @param currency currency definition
+   * @param pageSize entries per page
+   * @return page count, always at least one
+   */
+  public int topPages(Currency currency, int pageSize) {
+    int count = 0;
+    for (UUID uuid : storage.allKnownUuids()) {
+      PlayerAccount account = account(uuid);
+      synchronized (account) {
+        if (account.get(currency.id()).compareTo(BigDecimal.ZERO) > 0) {
+          count++;
         }
-        return Math.max(1, (int) Math.ceil(count / (double) pageSize));
+      }
     }
+    return Math.max(1, (int) Math.ceil(count / (double) pageSize));
+  }
 
-    public void savePlayer(UUID uuid) {
-        PlayerAccount acc = accounts.get(uuid);
-        if (acc != null) {
-            storage.save(acc);
-        }
+  /**
+   * Writes one cached account to disk on the calling thread.
+   *
+   * @param uuid player unique id
+   */
+  public void savePlayer(UUID uuid) {
+    PlayerAccount account = accounts.get(uuid);
+    if (account != null) {
+      storage.save(account);
     }
+  }
 
-    public void saveDirty() {
-        List<PlayerAccount> dirty = new ArrayList<>();
-        for (PlayerAccount acc : accounts.values()) {
-            if (acc.dirty()) {
-                dirty.add(acc);
-            }
-        }
-        if (!dirty.isEmpty()) {
-            storage.saveAll(dirty);
-        }
+  /**
+   * Writes one cached account to disk asynchronously.
+   *
+   * @param uuid player unique id
+   */
+  public void savePlayerAsync(UUID uuid) {
+    PlayerAccount account = accounts.get(uuid);
+    if (account == null) {
+      return;
     }
+    Schedulers.runAsync(plugin, () -> storage.save(account));
+  }
 
-    public void saveAll() {
-        if (!accounts.isEmpty()) {
-            storage.saveAll(accounts.values());
-        }
+  /** Collects dirty accounts and writes them asynchronously. */
+  public void saveDirtyAsync() {
+    List<PlayerAccount> dirty = collectDirty();
+    if (!dirty.isEmpty()) {
+      Schedulers.runAsync(plugin, () -> storage.saveAll(dirty));
     }
+  }
 
-    public UUID resolve(String name) {
-        Player online = Bukkit.getPlayerExact(name);
-        if (online != null) {
-            ensureAccount(online.getUniqueId(), online.getName());
-            return online.getUniqueId();
-        }
-        UUID fromStore = storage.uuidByName(name);
-        if (fromStore != null) {
-            return fromStore;
-        }
-        OfflinePlayer off = Bukkit.getOfflinePlayer(name);
-        if (off.hasPlayedBefore() || off.isOnline()) {
-            ensureAccount(off.getUniqueId(), off.getName() != null ? off.getName() : name);
-            return off.getUniqueId();
-        }
-        return null;
+  /** Writes every cached account synchronously. Intended for plugin disable. */
+  public void saveAll() {
+    if (!accounts.isEmpty()) {
+      storage.saveAll(accounts.values());
     }
+  }
 
-    public String nameOf(UUID uuid) {
-        PlayerAccount acc = accounts.get(uuid);
-        if (acc != null && acc.name() != null) {
-            return acc.name();
-        }
-        OfflinePlayer off = Bukkit.getOfflinePlayer(uuid);
-        return off.getName() != null ? off.getName() : uuid.toString();
+  /**
+   * Resolves a player name to a UUID using online players, storage, then offline lookup.
+   *
+   * @param name player name
+   * @return unique id, or {@code null} when unknown
+   */
+  public UUID resolve(String name) {
+    Player online = Bukkit.getPlayerExact(name);
+    if (online != null) {
+      ensureAccount(online.getUniqueId(), online.getName());
+      return online.getUniqueId();
     }
+    UUID fromStore = storage.uuidByName(name);
+    if (fromStore != null) {
+      return fromStore;
+    }
+    OfflinePlayer offline = Bukkit.getOfflinePlayer(name);
+    if (offline.hasPlayedBefore() || offline.isOnline()) {
+      ensureAccount(offline.getUniqueId(), offline.getName() != null ? offline.getName() : name);
+      return offline.getUniqueId();
+    }
+    return null;
+  }
 
-    private boolean withAccounts(UUID first, UUID second, Supplier<Boolean> action) {
-        PlayerAccount acc1 = account(first);
-        if (first.equals(second)) {
-            synchronized (acc1) {
-                return action.get();
-            }
-        }
-        PlayerAccount acc2 = account(second);
-        if (first.compareTo(second) < 0) {
-            synchronized (acc1) {
-                synchronized (acc2) {
-                    return action.get();
-                }
-            }
-        }
-        synchronized (acc2) {
-            synchronized (acc1) {
-                return action.get();
-            }
-        }
+  /**
+   * Returns the best known display name for a player id.
+   *
+   * @param uuid player unique id
+   * @return cached name, offline name, or the UUID string
+   */
+  public String nameOf(UUID uuid) {
+    PlayerAccount account = accounts.get(uuid);
+    if (account != null && account.name() != null) {
+      return account.name();
     }
+    OfflinePlayer offline = Bukkit.getOfflinePlayer(uuid);
+    return offline.getName() != null ? offline.getName() : uuid.toString();
+  }
 
-    private static BigDecimal bd(String raw) {
-        try {
-            return new BigDecimal(raw.trim());
-        } catch (Exception e) {
-            return BigDecimal.ZERO;
-        }
+  private List<PlayerAccount> collectDirty() {
+    List<PlayerAccount> dirty = new ArrayList<>();
+    for (PlayerAccount account : accounts.values()) {
+      if (account.dirty()) {
+        dirty.add(account);
+      }
     }
+    return dirty;
+  }
 
-    public record BalanceEntry(UUID uuid, String name, BigDecimal balance) {
+  private boolean setBalance(UUID uuid, Currency currency, BigDecimal raw, boolean bank) {
+    BigDecimal amount = currency.normalize(raw);
+    if (amount.compareTo(BigDecimal.ZERO) < 0) {
+      amount = BigDecimal.ZERO;
     }
+    if (currency.exceedsMax(amount)) {
+      return false;
+    }
+    PlayerAccount account = account(uuid);
+    synchronized (account) {
+      if (bank) {
+        account.setBank(currency.id(), amount);
+      } else {
+        account.set(currency.id(), amount);
+      }
+    }
+    return true;
+  }
+
+  private boolean addBalance(UUID uuid, Currency currency, BigDecimal raw, boolean bank) {
+    PlayerAccount account = account(uuid);
+    synchronized (account) {
+      BigDecimal current =
+          currency.normalize(bank ? account.getBank(currency.id()) : account.get(currency.id()));
+      BigDecimal next = current.add(currency.normalize(raw));
+      if (next.compareTo(BigDecimal.ZERO) < 0) {
+        next = BigDecimal.ZERO;
+      }
+      if (currency.exceedsMax(next)) {
+        return false;
+      }
+      if (bank) {
+        account.setBank(currency.id(), next);
+      } else {
+        account.set(currency.id(), next);
+      }
+    }
+    return true;
+  }
+
+  private boolean takeBalance(UUID uuid, Currency currency, BigDecimal raw, boolean bank) {
+    BigDecimal amount = currency.normalize(raw);
+    if (amount.compareTo(BigDecimal.ZERO) < 0) {
+      return false;
+    }
+    PlayerAccount account = account(uuid);
+    synchronized (account) {
+      BigDecimal current =
+          currency.normalize(bank ? account.getBank(currency.id()) : account.get(currency.id()));
+      if (current.compareTo(amount) < 0) {
+        return false;
+      }
+      BigDecimal next = current.subtract(amount);
+      if (bank) {
+        account.setBank(currency.id(), next);
+      } else {
+        account.set(currency.id(), next);
+      }
+    }
+    return true;
+  }
+
+  private boolean withAccounts(UUID first, UUID second, Supplier<Boolean> action) {
+    PlayerAccount firstAccount = account(first);
+    if (first.equals(second)) {
+      synchronized (firstAccount) {
+        return action.get();
+      }
+    }
+    PlayerAccount secondAccount = account(second);
+    if (first.compareTo(second) < 0) {
+      synchronized (firstAccount) {
+        synchronized (secondAccount) {
+          return action.get();
+        }
+      }
+    }
+    synchronized (secondAccount) {
+      synchronized (firstAccount) {
+        return action.get();
+      }
+    }
+  }
+
+  private static BigDecimal bd(String raw) {
+    try {
+      return new BigDecimal(raw.trim());
+    } catch (Exception e) {
+      return BigDecimal.ZERO;
+    }
+  }
+
+  /**
+   * One baltop row.
+   *
+   * @param uuid player unique id
+   * @param name display name
+   * @param balance wallet balance used for ranking
+   */
+  public record BalanceEntry(UUID uuid, String name, BigDecimal balance) {}
 }

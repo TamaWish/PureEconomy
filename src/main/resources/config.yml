@@ -1,11 +1,13 @@
 # =============================================================================
+# PureEconomy Configuration
+# =============================================================================
 # PureEconomy v1.0.1
 # Author: Lozaine@TamaWish
 # =============================================================================
 
-# -----------------------------------------------------------------------------
+# =============================================================================
 # General Settings
-# -----------------------------------------------------------------------------
+# =============================================================================
 
 # Language file to load from plugins/PureEconomy/lang/<code>.yml.
 language: en
@@ -17,9 +19,9 @@ autosave-seconds: 60
 # Create new player accounts using each currency's starting balance on join.
 create-on-join: true
 
-# -----------------------------------------------------------------------------
+# =============================================================================
 # Update Checker
-# -----------------------------------------------------------------------------
+# =============================================================================
 
 # Ask GitHub for the latest TamaWish/PureEconomy release when the plugin starts
 # or its config is reloaded. If a newer release exists, console is notified and
@@ -28,9 +30,9 @@ create-on-join: true
 update-checker:
   enabled: true
 
-# -----------------------------------------------------------------------------
+# =============================================================================
 # Economy Settings
-# -----------------------------------------------------------------------------
+# =============================================================================
 
 # Currency used by Vault and by commands when no currency is specified.
 default-currency: coins
@@ -38,10 +40,10 @@ default-currency: coins
 # Smallest amount players may transfer with /pay.
 pay-minimum: 0.01
 
-# -----------------------------------------------------------------------------
+# =============================================================================
 # Permissions
-# -----------------------------------------------------------------------------
-#
+# =============================================================================
+
 # Change these here, then run /eco reload (or restart).
 #
 #   node     Permission string checked by commands and granted in LuckPerms
@@ -59,7 +61,6 @@ pay-minimum: 0.01
 # This file is copied once on first run and is not overwritten by a new jar.
 # Existing servers must paste this section in by hand, or the plugin keeps
 # the built-in nodes and defaults listed below.
-
 permissions:
   # /balance — own wallet and bank
   balance:
@@ -145,12 +146,13 @@ permissions:
     node: pureeconomy.admin
     default: op
 
-# -----------------------------------------------------------------------------
+# =============================================================================
 # Currencies
-# -----------------------------------------------------------------------------
+# =============================================================================
 
 # Add optional currencies below. Fresh installations only use coins.
-# See the README for a complete multi-currency example and payout guide.
+# See https://github.com/TamaWish/PureEconomy for a complete multi-currency
+# example and payout guide.
 # IDs must contain only lowercase letters, numbers, and underscores.
 currencies:
   coins:

@@ -1,17 +1,18 @@
 # =============================================================================
 # PureEconomy Plugin Manifest
+# =============================================================================
 # This file is packaged inside the plugin jar and read by the server.
 # Server admins normally configure the plugin through config.yml instead.
 # =============================================================================
 
-# -----------------------------------------------------------------------------
+# =============================================================================
 # Plugin Metadata
-# -----------------------------------------------------------------------------
+# =============================================================================
 
 name: PureEconomy
 version: ${project.version}
 main: io.github.tamawish.pureeconomy.PureEconomy
-api-version: "1.21.4"
+api-version: "1.21"
 folia-supported: true
 author: "Lozaine@TamaWish"
 description: Lightweight multi-currency economy. Pairs with AuraUtils for utilities + economy.
@@ -24,9 +25,9 @@ softdepend:
   - PlaceholderAPI
 load: STARTUP
 
-# -----------------------------------------------------------------------------
+# =============================================================================
 # Commands
-# -----------------------------------------------------------------------------
+# =============================================================================
 
 # Optional command arguments are shown in [brackets].
 # Required command arguments are shown in <angle brackets>.
@@ -53,9 +54,9 @@ commands:
     aliases: [currencies]
     usage: /currency
 
-# -----------------------------------------------------------------------------
+# =============================================================================
 # Permissions
-# -----------------------------------------------------------------------------
+# =============================================================================
 
 # "true" grants the permission to all players; "op" grants it to operators.
 # Server admins can rename nodes and change defaults in config.yml.

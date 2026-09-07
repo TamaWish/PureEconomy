@@ -5,30 +5,43 @@ import org.bstats.bukkit.Metrics;
 import org.bstats.charts.SimplePie;
 
 /**
- * Anonymous usage metrics via bStats. Server owners can opt out in
- * {@code plugins/bStats/config.yml}.
+ * Anonymous usage metrics via bStats. Server owners can opt out in {@code
+ * plugins/bStats/config.yml}.
  */
 public final class MetricsHook {
 
-    private static final int BSTATS_PLUGIN_ID = 33797;
+  private static final int BSTATS_PLUGIN_ID = 33797;
 
-    private MetricsHook() {
+  private MetricsHook() {}
+
+  /**
+   * Registers bStats charts for Vault, PlaceholderAPI, and multi-currency usage.
+   *
+   * @param plugin owning plugin
+   */
+  public static void register(PureEconomy plugin) {
+    try {
+      Metrics metrics = new Metrics(plugin, BSTATS_PLUGIN_ID);
+
+      metrics.addCustomChart(
+          new SimplePie(
+              "vault_hooked",
+              () ->
+                  plugin.getServer().getPluginManager().getPlugin("Vault") != null ? "Yes" : "No"));
+
+      metrics.addCustomChart(
+          new SimplePie(
+              "placeholderapi_hooked",
+              () ->
+                  plugin.getServer().getPluginManager().getPlugin("PlaceholderAPI") != null
+                      ? "Yes"
+                      : "No"));
+
+      metrics.addCustomChart(
+          new SimplePie(
+              "multi_currency", () -> plugin.economy().currencyIds().size() > 1 ? "Yes" : "No"));
+    } catch (Exception e) {
+      plugin.getLogger().warning("Could not register bStats metrics: " + e.getMessage());
     }
-
-    public static void register(PureEconomy plugin) {
-        try {
-            Metrics metrics = new Metrics(plugin, BSTATS_PLUGIN_ID);
-
-            metrics.addCustomChart(new SimplePie("vault_hooked", () ->
-                    plugin.getServer().getPluginManager().getPlugin("Vault") != null ? "Yes" : "No"));
-
-            metrics.addCustomChart(new SimplePie("placeholderapi_hooked", () ->
-                    plugin.getServer().getPluginManager().getPlugin("PlaceholderAPI") != null ? "Yes" : "No"));
-
-            metrics.addCustomChart(new SimplePie("multi_currency", () ->
-                    plugin.economy().currencyIds().size() > 1 ? "Yes" : "No"));
-        } catch (Exception e) {
-            plugin.getLogger().warning("Could not register bStats metrics: " + e.getMessage());
-        }
-    }
+  }
 }
