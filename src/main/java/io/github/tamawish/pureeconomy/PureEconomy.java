@@ -16,7 +16,10 @@ import io.github.tamawish.pureeconomy.permission.Permissions;
 import io.github.tamawish.pureeconomy.storage.YamlStorage;
 import io.github.tamawish.pureeconomy.util.Schedulers;
 import io.github.tamawish.pureeconomy.util.UpdateChecker;
+import net.kyori.adventure.platform.bukkit.BukkitAudiences;
 import org.bukkit.Bukkit;
+import org.bukkit.command.CommandExecutor;
+import org.bukkit.command.TabCompleter;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -31,12 +34,14 @@ public final class PureEconomy extends JavaPlugin {
   private VaultHook vaultHook;
   private PlaceholderHook placeholderHook;
   private UpdateChecker updateChecker;
+  private BukkitAudiences adventure;
   private Object autosaveTask;
 
   @Override
   public void onEnable() {
     instance = this;
     saveDefaultConfig();
+    adventure = BukkitAudiences.create(this);
 
     lang = new Lang(this);
     permissions = new Permissions(this);
@@ -50,12 +55,12 @@ public final class PureEconomy extends JavaPlugin {
       return;
     }
 
-    getCommand("balance").setExecutor(new BalanceCommand(this));
-    getCommand("bank").setExecutor(new BankCommand(this));
-    getCommand("pay").setExecutor(new PayCommand(this));
-    getCommand("baltop").setExecutor(new BaltopCommand(this));
-    getCommand("eco").setExecutor(new EcoCommand(this));
-    getCommand("currency").setExecutor(new CurrencyCommand(this));
+    registerCommand("balance", new BalanceCommand(this));
+    registerCommand("bank", new BankCommand(this));
+    registerCommand("pay", new PayCommand(this));
+    registerCommand("baltop", new BaltopCommand(this));
+    registerCommand("eco", new EcoCommand(this));
+    registerCommand("currency", new CurrencyCommand(this));
 
     updateChecker = new UpdateChecker(this);
     Bukkit.getPluginManager()
@@ -87,6 +92,10 @@ public final class PureEconomy extends JavaPlugin {
     if (placeholderHook != null) {
       placeholderHook.unhook();
     }
+    if (adventure != null) {
+      adventure.close();
+      adventure = null;
+    }
   }
 
   /** Reloads config, language, permissions, currencies, hooks, and autosave. */
@@ -95,6 +104,9 @@ public final class PureEconomy extends JavaPlugin {
     lang.reload();
     permissions.reload();
     economy.loadCurrencies();
+    if (!economy.hasCurrencies()) {
+      getLogger().severe("No currencies configured after reload. Fix config.yml.");
+    }
     if (vaultHook != null) {
       vaultHook.tryHook();
     }
@@ -106,6 +118,18 @@ public final class PureEconomy extends JavaPlugin {
       updateChecker = new UpdateChecker(this);
     }
     updateChecker.checkAsync();
+  }
+
+  private void registerCommand(String name, CommandExecutor executor) {
+    var command = getCommand(name);
+    if (command == null) {
+      getLogger().severe("Missing command '/" + name + "' in plugin.yml — cannot register.");
+      return;
+    }
+    command.setExecutor(executor);
+    if (executor instanceof TabCompleter tabCompleter) {
+      command.setTabCompleter(tabCompleter);
+    }
   }
 
   private void startAutosave() {
@@ -134,6 +158,16 @@ public final class PureEconomy extends JavaPlugin {
   /** Returns the language manager. */
   public Lang lang() {
     return lang;
+  }
+
+  /**
+   * Returns the Adventure audience provider (shaded for Spigot compatibility).
+   *
+   * <p>Prefer this over Paper's {@code CommandSender#sendMessage(Component)} so messages work on
+   * Spigot as well as Paper/Folia.
+   */
+  public BukkitAudiences adventure() {
+    return adventure;
   }
 
   /** Returns the permission resolver. */

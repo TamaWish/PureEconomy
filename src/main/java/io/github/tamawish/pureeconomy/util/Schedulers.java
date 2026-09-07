@@ -8,16 +8,17 @@ import org.bukkit.scheduler.BukkitTask;
 /**
  * Folia-aware scheduling helpers.
  *
- * <p>Uses Paper {@code GlobalRegionScheduler} / {@code AsyncScheduler} / entity schedulers when
- * present, and falls back to the Bukkit scheduler on Spigot.
+ * <p>When Paper/Folia region schedulers are present, every path uses them and never calls {@link
+ * org.bukkit.scheduler.BukkitScheduler} (which throws on Folia). Spigot/Bukkit fall back to the
+ * classic scheduler.
  */
 public final class Schedulers {
 
-  private static final boolean FOLIA_LIKE = hasGlobal();
+  private static final boolean FOLIA_LIKE = hasGlobalRegionScheduler();
 
   private Schedulers() {}
 
-  private static boolean hasGlobal() {
+  private static boolean hasGlobalRegionScheduler() {
     try {
       Bukkit.class.getMethod("getGlobalRegionScheduler");
       return true;
@@ -27,7 +28,16 @@ public final class Schedulers {
   }
 
   /**
-   * Runs a task on the global region (Paper/Folia) or the main server thread (Spigot).
+   * Returns whether Paper/Folia region schedulers are available.
+   *
+   * @return {@code true} on Paper and Folia; {@code false} on Spigot/Bukkit
+   */
+  public static boolean isFoliaLike() {
+    return FOLIA_LIKE;
+  }
+
+  /**
+   * Runs a task on the global region (Paper/Folia) or the main server thread (Spigot/Bukkit).
    *
    * @param plugin owning plugin
    * @param task work to execute
@@ -66,15 +76,34 @@ public final class Schedulers {
    * @param task work to execute off the server thread
    */
   public static void runAsync(Plugin plugin, Runnable task) {
-    try {
+    if (FOLIA_LIKE) {
       Bukkit.getAsyncScheduler().runNow(plugin, scheduled -> task.run());
-    } catch (NoSuchMethodError | NoClassDefFoundError e) {
+    } else {
       Bukkit.getScheduler().runTaskAsynchronously(plugin, task);
     }
   }
 
   /**
-   * Runs a delayed task on the player's owning region (Folia) or the main thread (Spigot).
+   * Runs a task on the player's owning region (Folia/Paper) or the main thread (Spigot/Bukkit).
+   *
+   * <p>Use this when messaging or touching a player other than the current command sender so Folia
+   * region affinity is respected.
+   *
+   * @param plugin owning plugin
+   * @param player entity whose region owns the task
+   * @param task work to execute
+   */
+  public static void runAtEntity(Plugin plugin, Player player, Runnable task) {
+    if (FOLIA_LIKE) {
+      player.getScheduler().run(plugin, scheduled -> task.run(), null);
+    } else {
+      Bukkit.getScheduler().runTask(plugin, task);
+    }
+  }
+
+  /**
+   * Runs a delayed task on the player's owning region (Folia/Paper) or the main thread
+   * (Spigot/Bukkit).
    *
    * @param plugin owning plugin
    * @param player entity whose region owns the task
@@ -83,12 +112,11 @@ public final class Schedulers {
    */
   public static void runAtEntityLater(
       Plugin plugin, Player player, Runnable task, long delayTicks) {
-    try {
-      player
-          .getScheduler()
-          .runDelayed(plugin, scheduled -> task.run(), null, Math.max(1L, delayTicks));
-    } catch (NoSuchMethodError | NoClassDefFoundError e) {
-      Bukkit.getScheduler().runTaskLater(plugin, task, Math.max(1L, delayTicks));
+    long delay = Math.max(1L, delayTicks);
+    if (FOLIA_LIKE) {
+      player.getScheduler().runDelayed(plugin, scheduled -> task.run(), null, delay);
+    } else {
+      Bukkit.getScheduler().runTaskLater(plugin, task, delay);
     }
   }
 

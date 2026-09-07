@@ -179,7 +179,7 @@ public final class UpdateChecker {
     if (tag == null || tag.isBlank()) {
       return;
     }
-    String current = plugin.getPluginMeta().getVersion();
+    String current = plugin.getDescription().getVersion();
     latestVersion = stripVersionPrefix(tag);
     String url = firstJsonString(body, HTML_URL);
     latestUrl = url != null && SAFE_URL.matcher(url).matches() ? url : RELEASES_PAGE;
@@ -218,13 +218,23 @@ public final class UpdateChecker {
     if (!plugin.isEnabled() || !player.isOnline() || !isEnabled() || !updateAvailable) {
       return;
     }
-    String current = plugin.getPluginMeta().getVersion();
-    player.sendMessage(
-        plugin
-            .lang()
-            .component(
-                "update-available",
-                Lang.of("latest", latestVersion != null ? latestVersion : "", "current", current)));
+    if (plugin.adventure() == null) {
+      return;
+    }
+    String current = plugin.getDescription().getVersion();
+    plugin
+        .adventure()
+        .player(player)
+        .sendMessage(
+            plugin
+                .lang()
+                .component(
+                    "update-available",
+                    Lang.of(
+                        "latest",
+                        latestVersion != null ? latestVersion : "",
+                        "current",
+                        current)));
 
     Component click =
         Lang.colorComponent(plugin.lang().raw("update-click"))
@@ -233,6 +243,6 @@ public final class UpdateChecker {
                 HoverEvent.showText(
                     Lang.colorComponent(
                         plugin.lang().raw("update-hover").replace("{url}", latestUrl))));
-    player.sendMessage(click);
+    plugin.adventure().player(player).sendMessage(click);
   }
 }

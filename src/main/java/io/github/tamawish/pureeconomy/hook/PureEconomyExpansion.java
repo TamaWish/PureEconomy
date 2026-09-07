@@ -32,12 +32,12 @@ final class PureEconomyExpansion extends PlaceholderExpansion {
 
   @Override
   public @NotNull String getAuthor() {
-    return String.join(", ", plugin.getPluginMeta().getAuthors());
+    return String.join(", ", plugin.getDescription().getAuthors());
   }
 
   @Override
   public @NotNull String getVersion() {
-    return plugin.getPluginMeta().getVersion();
+    return plugin.getDescription().getVersion();
   }
 
   @Override

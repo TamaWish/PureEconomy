@@ -28,13 +28,12 @@ public final class EcoCommand implements CommandExecutor, TabCompleter {
   private final PureEconomy plugin;
 
   /**
-   * Creates the command and registers its tab completer.
+   * Creates the command.
    *
    * @param plugin owning plugin
    */
   public EcoCommand(PureEconomy plugin) {
     this.plugin = plugin;
-    plugin.getCommand("eco").setTabCompleter(this);
   }
 
   @Override

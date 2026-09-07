@@ -18,13 +18,12 @@ public final class CurrencyCommand implements CommandExecutor, TabCompleter {
   private final PureEconomy plugin;
 
   /**
-   * Creates the command and registers its tab completer.
+   * Creates the command.
    *
    * @param plugin owning plugin
    */
   public CurrencyCommand(PureEconomy plugin) {
     this.plugin = plugin;
-    plugin.getCommand("currency").setTabCompleter(this);
   }
 
   @Override

@@ -87,7 +87,7 @@ public final class Lang {
    *
    * @param key language key under the loaded YAML file
    * @param placeholders optional {@code name} → value map; may be {@code null}
-   * @return message component ready for {@link CommandSender#sendMessage(Component)}
+   * @return message component ready for {@link net.kyori.adventure.audience.Audience#sendMessage}
    */
   public Component component(String key, Map<String, String> placeholders) {
     return AMPERSAND.deserialize(applyPlaceholders(key, placeholders));
@@ -100,7 +100,7 @@ public final class Lang {
    * @param key language key under the loaded YAML file
    */
   public void send(CommandSender sender, String key) {
-    sender.sendMessage(component(key, null));
+    send(sender, key, null);
   }
 
   /**
@@ -111,7 +111,10 @@ public final class Lang {
    * @param placeholders {@code name} → value map used for {@code {name}} tokens
    */
   public void send(CommandSender sender, String key, Map<String, String> placeholders) {
-    sender.sendMessage(component(key, placeholders));
+    if (plugin.adventure() == null) {
+      return;
+    }
+    plugin.adventure().sender(sender).sendMessage(component(key, placeholders));
   }
 
   /**

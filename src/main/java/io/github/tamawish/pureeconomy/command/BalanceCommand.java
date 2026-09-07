@@ -22,13 +22,12 @@ public final class BalanceCommand implements CommandExecutor, TabCompleter {
   private final PureEconomy plugin;
 
   /**
-   * Creates the command and registers its tab completer.
+   * Creates the command.
    *
    * @param plugin owning plugin
    */
   public BalanceCommand(PureEconomy plugin) {
     this.plugin = plugin;
-    plugin.getCommand("balance").setTabCompleter(this);
   }
 
   @Override

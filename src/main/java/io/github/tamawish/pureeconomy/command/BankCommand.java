@@ -24,13 +24,12 @@ public final class BankCommand implements CommandExecutor, TabCompleter {
   private final PureEconomy plugin;
 
   /**
-   * Creates the command and registers its tab completer.
+   * Creates the command.
    *
    * @param plugin owning plugin
    */
   public BankCommand(PureEconomy plugin) {
     this.plugin = plugin;
-    plugin.getCommand("bank").setTabCompleter(this);
   }
 
   @Override

@@ -20,13 +20,12 @@ public final class BaltopCommand implements CommandExecutor, TabCompleter {
   private final PureEconomy plugin;
 
   /**
-   * Creates the command and registers its tab completer.
+   * Creates the command.
    *
    * @param plugin owning plugin
    */
   public BaltopCommand(PureEconomy plugin) {
     this.plugin = plugin;
-    plugin.getCommand("baltop").setTabCompleter(this);
   }
 
   @Override

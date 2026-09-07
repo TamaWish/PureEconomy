@@ -2,6 +2,27 @@
 
 User-facing highlights for recent PureEconomy releases. For every notable change, see [CHANGELOG.md](CHANGELOG.md).
 
+## Version 1.0.2 — 2026-09-08
+
+**Headline:** Spigot servers can enable PureEconomy again.
+
+### Fixed
+
+- Enable crash on Spigot caused by missing Adventure (`Component`) classes — Adventure is now shaded and messages go through `BukkitAudiences`.
+- Paper-only `getPluginMeta()` usage replaced with Spigot-compatible APIs.
+- Folia-safe schedulers (no `BukkitScheduler` fallback on Paper/Folia) and region-safe `/pay` recipient messages.
+
+### Upgrade notes
+
+Replace the jar and restart (or `/reload` if you use it). No config changes required.
+
+### Links
+
+- [Changelog 1.0.2](CHANGELOG.md#102---2026-09-08)
+- [README](README.md)
+- [GitHub Release v1.0.2](https://github.com/TamaWish/PureEconomy/releases/tag/v1.0.2)
+- Download: [PureEconomy-1.0.2.jar](https://github.com/TamaWish/PureEconomy/releases/download/v1.0.2/PureEconomy-1.0.2.jar)
+
 ## Version 1.0.1 — 2026-09-05
 
 **Headline:** Admins can manage bank balances from `/eco`, tune permissions in config, and get notified when a newer release is out.

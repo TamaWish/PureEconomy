@@ -75,7 +75,7 @@ Pair with [AuraUtils](https://github.com/TamaWish/AuraUtils) for a lightweight s
 mvn -q -DskipTests package
 ```
 
-Copy `target/PureEconomy-1.0.1.jar` into `plugins/`.
+Copy `target/PureEconomy-1.0.2.jar` into `plugins/`.
 
 > [!NOTE]
 > `config.yml` and `lang/en.yml` are copied once on first run and are **not** overwritten by a new jar. After upgrading, paste new config keys (such as `permissions:`) from the jar’s defaults by hand, or delete the lang file and restart to restore shipped messages.

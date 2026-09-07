@@ -7,6 +7,7 @@ import io.github.tamawish.pureeconomy.lang.Lang;
 import io.github.tamawish.pureeconomy.permission.Permissions.Node;
 import io.github.tamawish.pureeconomy.util.Amounts;
 import io.github.tamawish.pureeconomy.util.CommandCompletions;
+import io.github.tamawish.pureeconomy.util.Schedulers;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -25,13 +26,12 @@ public final class PayCommand implements CommandExecutor, TabCompleter {
   private final PureEconomy plugin;
 
   /**
-   * Creates the command and registers its tab completer.
+   * Creates the command.
    *
    * @param plugin owning plugin
    */
   public PayCommand(PureEconomy plugin) {
     this.plugin = plugin;
-    plugin.getCommand("pay").setTabCompleter(this);
   }
 
   @Override
@@ -104,7 +104,14 @@ public final class PayCommand implements CommandExecutor, TabCompleter {
     lang.send(player, "pay-sent", Lang.of("amount", pretty, "player", eco.nameOf(target)));
     Player online = Bukkit.getPlayer(target);
     if (online != null) {
-      lang.send(online, "pay-received", Lang.of("amount", pretty, "player", player.getName()));
+      String payerName = player.getName();
+      // Recipient may be on another Folia region — schedule on their entity thread.
+      Schedulers.runAtEntity(
+          plugin,
+          online,
+          () ->
+              lang.send(
+                  online, "pay-received", Lang.of("amount", pretty, "player", payerName)));
     }
     return true;
   }
