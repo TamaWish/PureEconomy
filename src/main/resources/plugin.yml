@@ -25,6 +25,14 @@ softdepend:
   - PlaceholderAPI
 load: STARTUP
 
+# Paper downloads these once into libraries/. They are not shaded into the plugin jar.
+libraries:
+  - org.jetbrains.kotlin:kotlin-stdlib:2.1.10
+  - com.zaxxer:HikariCP:6.2.1
+  - com.github.ben-manes.caffeine:caffeine:3.2.0
+  - org.xerial:sqlite-jdbc:3.47.2.0
+  - com.mysql:mysql-connector-j:9.1.0
+
 # =============================================================================
 # Commands
 # =============================================================================

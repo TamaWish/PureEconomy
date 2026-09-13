@@ -1,0 +1,8 @@
+{
+  "id": "pureeconomy",
+  "name": "PureEconomy",
+  "version": "1.2.0",
+  "description": "Network-wide multi-currency economy",
+  "authors": ["Lozaine@TamaWish"],
+  "main": "io.github.tamawish.pureeconomy.velocity.PureEconomyVelocity"
+}

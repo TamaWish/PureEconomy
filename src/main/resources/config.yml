@@ -1,7 +1,7 @@
 # =============================================================================
 # PureEconomy Configuration
 # =============================================================================
-# PureEconomy v1.0.2
+# PureEconomy v1.2.0
 # Author: Lozaine@TamaWish
 # =============================================================================
 
@@ -12,12 +12,18 @@
 # Language file to load from plugins/PureEconomy/lang/<code>.yml.
 language: en
 
-# Flush changed balances to disk at this interval in seconds.
+# Flush changed balances to storage at this interval in seconds.
 # Set to 0 to save only when a player quits or the plugin disables.
+# On MySQL networks keep this low (15–30) so other servers see updates sooner.
 autosave-seconds: 60
 
 # Create new player accounts using each currency's starting balance on join.
 create-on-join: true
+
+# Enable only on backend servers in a Velocity/Bungee network. Network mode requires MySQL and
+# authoritative currency settings matching the proxy's config.yml.
+network:
+  enabled: false
 
 # =============================================================================
 # Update Checker
@@ -50,22 +56,20 @@ pay-minimum: 0.01
 #            (or any permission plugin). Rename only if you also grant the
 #            new name. Leave the defaults if you are unsure.
 #   default  Who has it when no permission plugin assigns it:
-#              everyone  all players
-#              op        operators only
-#              nobody    nobody until a permission plugin grants it
+#              true   all players (Bukkit permission default)
+#              op     operators only
+#              false  nobody until a permission plugin grants it
 #
 # Console always bypasses these checks.
 # LuckPerms (and similar) override default when they set the node explicitly.
 # Grant pureeconomy.admin to give every admin economy permission at once.
 #
-# This file is copied once on first run and is not overwritten by a new jar.
-# Existing servers must paste this section in by hand, or the plugin keeps
-# the built-in nodes and defaults listed below.
+# Missing keys are merged from the jar on load/reload; custom extra keys are kept.
 permissions:
   # /balance — own wallet and bank
   balance:
     node: pureeconomy.balance
-    default: everyone
+    default: true
 
   # /balance <player> — view another player's balances
   balance-others:
@@ -75,32 +79,32 @@ permissions:
   # /bank — view own bank
   bank:
     node: pureeconomy.bank
-    default: everyone
+    default: true
 
   # /bank transfer — wallet to bank
   bank-transfer:
     node: pureeconomy.bank.transfer
-    default: everyone
+    default: true
 
   # /bank withdraw — bank to wallet
   bank-withdraw:
     node: pureeconomy.bank.withdraw
-    default: everyone
+    default: true
 
   # /pay
   pay:
     node: pureeconomy.pay
-    default: everyone
+    default: true
 
   # /baltop
   baltop:
     node: pureeconomy.baltop
-    default: everyone
+    default: true
 
   # /currency
   currency:
     node: pureeconomy.currency
-    default: everyone
+    default: true
 
   # Parent for /eco (LuckPerms grouping; commands check the specific nodes)
   eco:
@@ -145,6 +149,36 @@ permissions:
   admin:
     node: pureeconomy.admin
     default: op
+
+# =============================================================================
+# Storage
+# =============================================================================
+# yaml (default) — single data.yml, fine for small servers. Not lag-free at tens of thousands of accounts.
+# sqlite — recommended local store (economy.db via Hikari); imports data.yml once if the DB is empty.
+# mysql — shared database for large / network servers. YAML is left on disk as backup.
+#
+# SQL commands and network I/O run off-thread. Hot accounts live in Caffeine.
+# PlaceholderAPI uses peekBalance (cache only — never JDBC).
+storage:
+  type: yaml
+  sqlite:
+    file: economy.db
+  mysql:
+    host: localhost
+    port: 3306
+    database: pureeconomy
+    username: root
+    password: ""
+    pool-size: 8
+    connection-timeout-ms: 5000
+    query-timeout-seconds: 5
+    deadlock-retries: 3
+  cache:
+    max-accounts: 2000
+    expire-minutes: 30
+    baltop-ttl-seconds: 15
+    # Network-mode balance cache for PAPI / Vault reads (100–500).
+    network-ttl-millis: 250
 
 # =============================================================================
 # Currencies

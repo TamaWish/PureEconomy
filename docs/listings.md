@@ -8,7 +8,7 @@ Copy-paste text for project pages. GitHub README is the source of truth for full
 
 ### Short description (summary)
 
-Lightweight multi-currency economy for Spigot, Paper, and Folia. Pairs with AuraUtils for a focused utilities + economy stack.
+Lightweight multi-currency economy for Paper, Purpur, and Folia. Pairs with AuraUtils for a focused utilities + economy stack.
 
 ### Relations blurb
 

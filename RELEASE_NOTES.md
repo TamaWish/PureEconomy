@@ -2,6 +2,47 @@
 
 User-facing highlights for recent PureEconomy releases. For every notable change, see [CHANGELOG.md](CHANGELOG.md).
 
+## Version 1.2.0 — 2026-09-13
+
+**Headline:** Paper-only thin JAR, no MySQL on the scoreboard thread, and SQL that scales.
+
+Drop `PureEconomy-1.2.0.jar` on Paper / Purpur / Folia. First boot downloads Kotlin, Hikari, Caffeine, and JDBC drivers via Paper `libraries:` (needs Maven Central once). Spigot is no longer supported. Proxy networks use `PureEconomy-Velocity-1.2.0.jar` or `PureEconomy-Bungee-1.2.0.jar` with the same shared MySQL database and currency definitions.
+
+Existing SQL databases migrate VARCHAR amounts to DECIMAL automatically. YAML stays the default for tiny servers; use SQLite or MySQL for anything busy.
+
+### Reliability and threading
+
+- PlaceholderAPI balance placeholders are memory-only. A cold or expired network value returns immediately and refreshes once in the background, so scoreboard rendering never waits for MySQL.
+- Successful network mutations update the cache immediately and preserve specific failure reasons such as insufficient funds and maximum balance.
+- Bukkit command parsing, permissions, player lookup, messaging, and transaction events run on their proper Paper/Folia thread.
+- Network account setup on join runs asynchronously, and dirty cache evictions remain queued across overlapping save passes.
+
+### Verification
+
+The release suite includes regression coverage for zero-JDBC placeholder misses, coalesced cache refreshes, asynchronous join setup, dirty eviction preservation, concurrent transfers, and network mutation status mapping.
+
+## Version 1.1.0 — 2026-09-09
+
+**Headline:** Public multi-currency API, comment-preserving config merge, and optional SQL for large servers.
+
+### Highlights
+
+- `PureEconomyAPI` on Bukkit ServicesManager: wallets, banks, pay, baltop, name resolve, currency metadata.
+- `EconomyTransactionEvent` after successful money movement (not cancellable).
+- BoostedYAML merges missing `config.yml` / lang keys on load and `/eco reload` without wiping custom keys.
+- Optional `storage.type: sqlite` or `mysql` (Hikari). YAML `data.yml` stays the default; switching to empty SQL imports it once.
+- Caffeine-backed hot accounts and TTL-cached `/baltop`.
+- MiniMessage language files (legacy `&` still works). Chat prefix is a lime→emerald gradient on Paper and solid green on Spigot (`BukkitAudiences`). Kotlin 2 / Java 21.
+
+### Upgrade notes
+
+Replace the jar. Existing `config.yml` gains a `storage:` block on next load. Leave `storage.type: yaml` unless you want SQLite/MySQL. Back up `plugins/PureEconomy/` before switching storage.
+
+### Links
+
+- [Changelog 1.1.0](CHANGELOG.md#110---2026-09-09)
+- [README](README.md)
+
 ## Version 1.0.2 — 2026-09-08
 
 **Headline:** Spigot servers can enable PureEconomy again.

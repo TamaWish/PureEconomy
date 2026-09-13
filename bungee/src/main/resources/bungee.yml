@@ -1,0 +1,5 @@
+name: PureEconomy
+version: 1.2.0
+main: io.github.tamawish.pureeconomy.bungee.PureEconomyBungee
+author: Lozaine@TamaWish
+description: Network-wide multi-currency economy

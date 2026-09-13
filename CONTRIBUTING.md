@@ -52,7 +52,7 @@ A useful report includes:
 
 - Expected behavior vs actual behavior
 - Steps to reproduce
-- Plugin version, Minecraft version, and server software (Bukkit, Spigot, Paper, Folia, …)
+- Plugin version, Minecraft version, and server software (Paper, Purpur, Folia, …)
 - Relevant logs or stack traces (trim secrets and player data)
 
 Open an issue at [GitHub Issues](https://github.com/TamaWish/PureEconomy/issues). There is no issue template yet; the points above are enough.
@@ -86,8 +86,8 @@ First PR tip: keep the change small (docs, messages, a focused bug fix, or a sin
 
 ### Prerequisites
 
-- **JDK 21+** (plugin bytecode targets Java 21 via `maven.compiler.release`)
-- **Maven** (3.x)
+- **JDK 21+** (plugin bytecode targets Java 21 via the Gradle toolchain)
+- **Gradle** via the included wrapper (`./gradlew`)
 
 See [README.md](README.md) for Minecraft / server requirements.
 
@@ -102,22 +102,29 @@ cd PureEconomy
 ```
 
 ```bash
-mvn clean package
+./gradlew clean build
 ```
 
-The shaded JAR appears in `target/` as `PureEconomy-<version>.jar`. Copy it into a test server’s `plugins/` folder when you need an in-game check.
+The shaded JAR appears in `build/libs/` as `PureEconomy-<version>.jar`. Copy it into a test server’s `plugins/` folder when you need an in-game check.
 
 ### Tests and formatting
 
 ```bash
-mvn test
+./gradlew test
 ```
 
 ```bash
-mvn spotless:apply
+./gradlew spotlessApply
 ```
 
-The build runs Spotless `check` (Google Java Format). Apply formatting before you open a PR if `spotless:check` would fail.
+The build runs Spotless `check` with **ktlint** on `src/**/*.kt`. Apply formatting before you open a PR if `spotlessCheck` would fail.
+
+Performance and threading behavior is part of the compatibility contract. Tests that touch persistence should preserve these invariants:
+
+- PlaceholderAPI/`peekBalance` paths must perform no JDBC on the caller thread.
+- Do not move an entire Bukkit command executor to an async scheduler; keep Bukkit API access on the appropriate Paper/Folia thread and schedule only explicit background work.
+- Dirty cache inspection must not drain or discard evicted accounts.
+- Network mutations must retain their precise failure status rather than collapsing failures into a Boolean.
 
 There is no separate env file for local builds.
 
@@ -131,21 +138,21 @@ There is no separate env file for local builds.
 6. Before opening the PR, run:
 
 ```bash
-mvn test
+./gradlew test
 ```
 
 ```bash
-mvn spotless:apply
+./gradlew spotlessApply
 ```
 
 ```bash
-mvn clean package
+./gradlew clean build
 ```
 
 ## Style guides
 
-- **Language:** Java 21 (`maven.compiler.release` 21)
-- **Formatter:** Spotless with Google Java Format (`mvn spotless:apply` / build-time `spotless:check`)
+- **Language:** Kotlin 2 / Java 21 toolchain (bytecode release 21)
+- **Formatter:** Spotless with ktlint (`./gradlew spotlessApply` / build-time `spotlessCheck`) — not Google Java Format
 - **Messages:** keep keys and tone consistent with `src/main/resources/lang/en.yml`
 - **Commits:** recent history uses [Conventional Commits](https://www.conventionalcommits.org/) style (see below)
 

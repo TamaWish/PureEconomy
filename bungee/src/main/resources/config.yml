@@ -1,0 +1,24 @@
+storage:
+  type: mysql
+  mysql:
+    host: localhost
+    port: 3306
+    database: pureeconomy
+    username: root
+    password: ""
+    pool-size: 8
+    connection-timeout-ms: 5000
+    query-timeout-seconds: 5
+    deadlock-retries: 3
+default-currency: coins
+pay-minimum: 0.01
+currencies:
+  coins:
+    singular: Coin
+    plural: Coins
+    symbol: "$"
+    decimals: 2
+    starting-balance: 100.00
+    max-balance: -1
+    payable: true
+messages: {}

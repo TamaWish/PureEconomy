@@ -1,10 +1,14 @@
 target/
+build/
+.gradle/
 dependency-reduced-pom.xml
 .idea/
 *.iml
 .classpath
 .project
 .settings/
+.cursor/
+.kotlin/
 
 # Marketplace listing copy (paste into Modrinth, Spigot, Hangar, CurseForge — not tracked in git)
 docs/modrinth-description.md

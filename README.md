@@ -1,6 +1,6 @@
 # PureEconomy
 
-Lightweight multi-currency economy for Bukkit, Spigot, Paper, and Folia — balances and payments only.
+Lightweight multi-currency economy for Paper, Purpur, Folia, Velocity, BungeeCord, and Waterfall.
 
 ![PureEconomy](https://files.catbox.moe/3v73ga.png)
 
@@ -9,7 +9,7 @@ Lightweight multi-currency economy for Bukkit, Spigot, Paper, and Folia — bala
 [![bStats Servers](https://img.shields.io/bstats/servers/33797?style=plastic&label=bStats%20servers&color=f16436)](https://bstats.org/plugin/bukkit/PureEconomy/33797)
 [![Java](https://img.shields.io/badge/Java-21%2B-orange?style=plastic&logo=openjdk&logoColor=white)](https://www.java.com)
 [![Minecraft](https://img.shields.io/badge/Minecraft-1.21.4%2B-brightgreen?style=plastic&logo=minecraft&logoColor=white)](https://www.minecraft.net)
-[![Platforms](https://img.shields.io/badge/Platforms-Bukkit%20%7C%20Spigot%20%7C%20Paper%20%7C%20Folia-blue?style=plastic)](https://github.com/TamaWish/PureEconomy)
+[![Platforms](https://img.shields.io/badge/Platforms-Paper%20%7C%20Purpur%20%7C%20Folia-blue?style=plastic)](https://github.com/TamaWish/PureEconomy)
 
 ## Table of Contents
 
@@ -37,8 +37,8 @@ Lightweight multi-currency economy for Bukkit, Spigot, Paper, and Folia — bala
 - Configurable permission nodes and defaults in `config.yml`
 - Optional [Vault](https://www.spigotmc.org/resources/vault.34315/) hook (default currency only)
 - Optional [PlaceholderAPI](https://www.spigotmc.org/resources/placeholderapi.6245/) placeholders for every configured currency
-- Folia-aware scheduling (`folia-supported: true`)
-- YAML persistence with autosave
+- Folia-aware scheduling (`folia-supported: true`) and async I/O via Paper schedulers
+- YAML persistence with autosave; BoostedYAML comment-preserving merge for `config.yml` / `lang/`
 
 Focused on economy only — no kits, homes, chat, shops, interest, or GUIs.
 
@@ -54,31 +54,44 @@ Pair with [AuraUtils](https://github.com/TamaWish/AuraUtils) for a lightweight s
 | Requirement | Notes |
 |-------------|--------|
 | Minecraft | 1.21.4+ (`api-version` `1.21`) |
-| Java | 21+ (bytecode release 21). Paper/Folia servers on newer JDKs still load this jar. |
-| Server | Bukkit, Spigot, Paper, or Folia |
+| Java | 21+ (bytecode release 21). Kotlin stdlib, JDBC drivers, Hikari, and Caffeine are loaded by Paper `libraries:`. |
+| Server | Paper, Purpur, or Folia (Spigot/CraftBukkit are not supported). Velocity, BungeeCord, or Waterfall for proxy networks. |
 | Vault | Optional |
 | PlaceholderAPI | Optional |
-| Maven 3.x | Only if building from source |
+| Gradle | Wrapper included (`./gradlew`) when building from source |
 
 ## Installation
 
 ### From a release
 
 1. Download the latest `PureEconomy-*.jar` from [GitHub Releases](https://github.com/TamaWish/PureEconomy/releases).
-2. Place the jar in your server’s `plugins/` folder.
+2. Place the jar in your server’s `plugins/` folder. First Paper boot downloads Maven dependencies into `libraries/` (needs outbound access to Maven Central, or pre-fill that folder).
 3. Start (or restart) the server.
 4. Edit `plugins/PureEconomy/config.yml` and `plugins/PureEconomy/lang/en.yml` as needed, then run `/eco reload` or restart.
 
 ### Build from source
 
 ```bash
-mvn -q -DskipTests package
+./gradlew test build
 ```
 
-Copy `target/PureEconomy-1.0.2.jar` into `plugins/`.
+Copy `build/libs/PureEconomy-1.2.0.jar` into `plugins/`.
+
+The build also produces `velocity/build/libs/PureEconomy-Velocity-1.2.0.jar` and
+`bungee/build/libs/PureEconomy-Bungee-1.2.0.jar`.
+
+### Proxy networks
+
+1. Install the Velocity or Bungee artifact on the proxy and `PureEconomy-1.2.0.jar` on every backend.
+2. Use one shared MySQL database and copy the proxy's currencies/default currency to each backend.
+3. Set `storage.type: mysql` and `network.enabled: true` on every backend.
+4. Configure secure Velocity modern forwarding or Bungee IP forwarding so proxy and backend UUIDs match.
+5. Start the proxy first. It publishes the canonical currency fingerprint; backends reject mutations when their definitions differ.
+
+Proxy commands run asynchronously and include `/balance`, `/bank`, `/pay`, `/baltop`, `/currency`, and `/eco`. Vault and PlaceholderAPI remain backend integrations.
 
 > [!NOTE]
-> `config.yml` and `lang/en.yml` are copied once on first run and are **not** overwritten by a new jar. After upgrading, paste new config keys (such as `permissions:`) from the jar’s defaults by hand, or delete the lang file and restart to restore shipped messages.
+> `config.yml` and `lang/*.yml` are merged with jar defaults on load and `/eco reload` via BoostedYAML: missing keys (and their comments) are inserted, custom values and extra disk-only keys are kept. Player data (`data.yml` or SQL) is never overwritten by the jar template.
 
 ## Usage
 
@@ -132,10 +145,11 @@ File: `plugins/PureEconomy/config.yml`
 | `language` | no | `en` | Loads `lang/<code>.yml` |
 | `autosave-seconds` | no | `60` | Disk flush interval; `0` = save only on quit/disable |
 | `create-on-join` | no | `true` | Create accounts with starting balances on join |
+| `network.enabled` | no | `false` | Use authoritative shared MySQL transactions on a proxy network |
 | `update-checker.enabled` | no | `true` | Check GitHub for newer releases |
 | `default-currency` | yes | `coins` | Vault + omitted currency argument |
 | `pay-minimum` | no | `0.01` | Minimum `/pay` amount |
-| `permissions.*` | no | see file | Rename nodes; set `everyone` / `op` / `nobody` defaults |
+| `permissions.*` | no | see file | Rename nodes; set `true` / `op` / `false` defaults |
 | `currencies.<id>.*` | yes | `coins` | Currency definitions |
 
 ### Currency fields
@@ -197,7 +211,7 @@ With PlaceholderAPI:
 | `%pureeconomy_balance_<currency>%` | Raw wallet balance |
 | `%pureeconomy_balance_<currency>_formatted%` | Balance with symbol and formatting |
 
-Example: `%pureeconomy_balance_gems%`, `%pureeconomy_balance_coins_formatted%`.
+Example: `%pureeconomy_balance_gems%`, `%pureeconomy_balance_coins_formatted%`, `%pureeconomy_bank_coins%`, `%pureeconomy_bank_coins_formatted%`.
 
 Vault’s `%vault_eco_*%` placeholders use the default currency only.
 
@@ -205,15 +219,46 @@ Vault’s `%vault_eco_*%` placeholders use the default currency only.
 
 `plugins/PureEconomy/lang/en.yml` ships with the plugin. Copy it to `lang/xx.yml`, edit messages, and set `language: xx` in `config.yml`. English is the only bundled language.
 
-Use `&` color codes. Keep placeholders such as `{prefix}`, `{player}`, `{amount}`, `{bank}`, and `{currency}` unchanged.
+Shipped strings use MiniMessage tags (`<gray>`, `<white>`, …). Legacy `&` color codes still work. Keep placeholders such as `{prefix}`, `{brand}`, `{player}`, `{amount}`, `{bank}`, and `{currency}` unchanged.
+
+Chat uses Paper Adventure. The shipped `{prefix}` / `{brand}` is a lime→emerald **gradient**. A custom `prefix` in your lang file is left as written.
 
 ## Storage
 
-`plugins/PureEconomy/data.yml` — UUID-keyed wallet and bank balances. Cached in memory; flushed on quit, disable, and autosave. Banks start at zero.
+Default is YAML: `plugins/PureEconomy/data.yml` — fine for small servers. YAML rewrites the whole file on save and will not stay lag-free at tens of thousands of accounts.
+
+For any busy standalone server, set `storage.type` to `sqlite` (local `economy.db`) or `mysql`. SQL stores amounts as `DECIMAL`, uses UPSERT, and ranks `/baltop` with `ORDER BY … LIMIT`. The first start with an empty database imports `data.yml` once and leaves the YAML file on disk as backup.
+
+Hot accounts live in a Caffeine cache (`storage.cache`). PlaceholderAPI `peekBalance` is strictly memory-only and never waits for JDBC. In network mode, a cold or expired entry returns its last-known value (zero until first load) and queues one deduplicated background refresh. Successful mutations update cached balances immediately. Backends skip the local SQL ledger; MySQL is authoritative, fresh reads use `storage.cache.network-ttl-millis`, and the currency fingerprint is kept in memory (refreshed on the 30s timer).
+
+For proxy networks, also set `network.enabled: true`; every mutation uses a row-locked transaction and reports an exact result such as insufficient funds or maximum balance. Bukkit command parsing, permission checks, player lookup, and messaging remain on the correct Paper/Folia thread. Network join bookkeeping, cache refreshes, and persistence work are scheduled explicitly in the background.
 
 ## API
 
-Same jar. Depend on PureEconomy and call:
+Prefer the ServicesManager API (works for SoftDepend plugins without a hard jar dependency on internals):
+
+```java
+import io.github.tamawish.pureeconomy.api.PureEconomyAPI;
+import java.math.BigDecimal;
+import java.util.UUID;
+import org.bukkit.Bukkit;
+import org.bukkit.plugin.RegisteredServiceProvider;
+
+RegisteredServiceProvider<PureEconomyAPI> rsp =
+    Bukkit.getServicesManager().getRegistration(PureEconomyAPI.class);
+if (rsp != null) {
+    PureEconomyAPI api = rsp.getProvider();
+    UUID playerId = player.getUniqueId();
+    api.deposit(playerId, "gems", BigDecimal.valueOf(5));
+    api.transfer(fromId, toId, "coins", BigDecimal.TEN);
+}
+```
+
+`PureEconomyAPI` also covers banks (`getBank` / `depositBank` / `withdrawBank`), `resolve(name)`, `top` / `topPages`, currency metadata (`symbol`, `decimals`, `payable`), and reason-coded `depositResult` / `withdrawResult` / `transferResult` (`EconomyResult`). Existing Boolean methods are unchanged. Listen to `EconomyTransactionEvent` (post-success, not cancellable; listeners run on the global region / main thread) for wallet, bank, and pay changes.
+
+Vault = default currency for shops. `PureEconomyAPI` = multi-currency for integrators.
+
+Same-jar access to the full service is still available:
 
 ```java
 import io.github.tamawish.pureeconomy.PureEconomy;
@@ -256,18 +301,27 @@ When enabled, PureEconomy checks [GitHub releases](https://github.com/TamaWish/P
 ## Development
 
 ```bash
-mvn test
+./gradlew test
 ```
 
 ```bash
-mvn spotless:check
+./gradlew spotlessCheck
 ```
 
 ```bash
-mvn -q -DskipTests package
+./gradlew -q build -x test
 ```
 
-Spotless (Google Java Format) runs as part of the Maven build. Tests use JUnit 5.
+Spotless (ktlint) runs as part of the Gradle build. Tests use JUnit 5. Sources are Kotlin 2 on a Java 21 toolchain; async I/O uses `Schedulers.runAsync`. Config/lang merge uses BoostedYAML with `keepAll`.
+
+### Smoke matrix
+
+| Platform | Expect |
+|----------|--------|
+| Paper / Purpur | Thin plugin JAR + Paper `libraries:`; native Adventure; lime→emerald `{brand}` |
+| Folia | Custom region/entity schedulers (`folia-supported: true`); economy events on the global region |
+| Vault shops | Default currency only; withdraw/deposit use a single mutation result |
+| SoftDepend plugins | `PureEconomyAPI` on ServicesManager for multi-currency |
 
 See [CHANGELOG.md](CHANGELOG.md) for release notes.
 

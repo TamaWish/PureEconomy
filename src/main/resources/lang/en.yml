@@ -3,106 +3,109 @@
 # =============================================================================
 # Copy this file to lang/<code>.yml, translate the messages, then set
 # language: <code> in config.yml.
-# Use & color codes; keep placeholders like {prefix} and {amount} unchanged.
+# Prefer MiniMessage tags (<red>, <green>, <gray>, …). Legacy & codes still work.
+# Keep placeholders like {prefix}, {brand}, and {amount} unchanged.
+# {brand} is a lime→emerald gradient on Paper / Purpur / Folia.
+# The shipped prefix uses the same gradient; a custom prefix is left as written.
 # =============================================================================
 
 # =============================================================================
 # Prefix
 # =============================================================================
 
-prefix: "&8[&aEco&8] &r"
+prefix: "<gradient:#C8FF7A:#3DDC84><bold>Eco</bold></gradient> <dark_gray>»</dark_gray> "
 
 # =============================================================================
 # Update Checker
 # =============================================================================
 
-update-available: "{prefix}&aA new PureEconomy release is available: &f{latest} &7(running {current})."
-update-click: "{prefix}&bClick here to open the GitHub release page."
-update-hover: "&7Open &f{url}"
+update-available: "{prefix}<green>A new PureEconomy release is available: <white>{latest}</white> <gray>(running {current}).</gray>"
+update-click: "{prefix}<aqua>Click here to open the GitHub release page.</aqua>"
+update-hover: "<gray>Open <white>{url}</white></gray>"
 
 # =============================================================================
 # Errors and Validation
 # =============================================================================
 
-no-permission: "{prefix}&cYou cannot do that."
-player-only: "{prefix}&cPlayers only."
-unknown-player: "{prefix}&cPlayer not found: &f{player}"
-unknown-currency: "{prefix}&cUnknown currency: &f{currency}"
-invalid-amount: "{prefix}&cInvalid amount."
-invalid-number: "{prefix}&cThat is not a number."
-not-enough: "{prefix}&cNot enough {currency}."
-pay-self: "{prefix}&cYou cannot pay yourself."
-pay-disabled: "{prefix}&cThat currency cannot be transferred."
-pay-minimum: "{prefix}&cMinimum transfer is {amount}."
-max-balance: "{prefix}&cThat would exceed the max balance for {currency}."
-bank-max-balance: "{prefix}&cThat would exceed the bank balance limit for {currency}."
-bank-not-enough: "{prefix}&cNot enough {currency} in your bank."
-account-missing: "{prefix}&cNo account for {player}."
+no-permission: "{prefix}<red>You cannot do that.</red>"
+player-only: "{prefix}<red>Players only.</red>"
+unknown-player: "{prefix}<red>Player not found: <white>{player}</white></red>"
+unknown-currency: "{prefix}<red>Unknown currency: <white>{currency}</white></red>"
+invalid-amount: "{prefix}<red>Invalid amount.</red>"
+invalid-number: "{prefix}<red>That is not a number.</red>"
+not-enough: "{prefix}<red>Not enough {currency}.</red>"
+pay-self: "{prefix}<red>You cannot pay yourself.</red>"
+pay-disabled: "{prefix}<red>That currency cannot be transferred.</red>"
+pay-minimum: "{prefix}<red>Minimum transfer is {amount}.</red>"
+max-balance: "{prefix}<red>That would exceed the max balance for {currency}.</red>"
+bank-max-balance: "{prefix}<red>That would exceed the bank balance limit for {currency}.</red>"
+bank-not-enough: "{prefix}<red>Not enough {currency} in your bank.</red>"
+account-missing: "{prefix}<red>No account for {player}.</red>"
 
 # =============================================================================
 # Balance Messages
 # =============================================================================
 
-balance-self: "{prefix}&7Your {currency}: &f{amount} &8(&7bank &f{bank}&8)"
-balance-other: "{prefix}&f{player}&7's {currency}: &f{amount} &8(&7bank &f{bank}&8)"
-balance-all-header: "{prefix}&7Balances for &f{player}&7:"
-balance-all-line: "&8- &f{currency}&7: &f{amount} &8(&7bank &f{bank}&8)"
+balance-self: "{prefix}<gray>Your {currency}: <white>{amount}</white> <dark_gray>(</dark_gray><gray>bank <white>{bank}</white></gray><dark_gray>)</dark_gray>"
+balance-other: "{prefix}<white>{player}</white><gray>'s {currency}: <white>{amount}</white> <dark_gray>(</dark_gray><gray>bank <white>{bank}</white></gray><dark_gray>)</dark_gray>"
+balance-all-header: "{prefix}<gray>Balances for <white>{player}</white><gray>:</gray>"
+balance-all-line: "<dark_gray>- <white>{currency}</white><gray>: <white>{amount}</white> <dark_gray>(</dark_gray><gray>bank <white>{bank}</white></gray><dark_gray>)</dark_gray>"
 
 # =============================================================================
 # Player Payments
 # =============================================================================
 
-pay-sent: "{prefix}&7Sent &f{amount} &7to &f{player}&7."
-pay-received: "{prefix}&7Received &f{amount} &7from &f{player}&7."
+pay-sent: "{prefix}<gray>Sent <white>{amount}</white> to <white>{player}</white>.</gray>"
+pay-received: "{prefix}<gray>Received <white>{amount}</white> from <white>{player}</white>.</gray>"
 
 # =============================================================================
 # Bank
 # =============================================================================
 
-bank-balance: "{prefix}&7Your banked {currency}: &f{amount}"
-bank-balance-header: "{prefix}&7Your bank balances:"
-bank-balance-line: "&8- &f{currency}&7: &f{amount}"
-bank-transfer: "{prefix}&7Transferred &f{amount} &7to your bank."
-bank-withdraw: "{prefix}&7Withdrew &f{amount} &7from your bank."
-bank-failed: "{prefix}&cCould not complete that bank transfer."
+bank-balance: "{prefix}<gray>Your banked {currency}: <white>{amount}</white></gray>"
+bank-balance-header: "{prefix}<gray>Your bank balances:</gray>"
+bank-balance-line: "<dark_gray>- <white>{currency}</white><gray>: <white>{amount}</white></gray>"
+bank-transfer: "{prefix}<gray>Transferred <white>{amount}</white> to your bank.</gray>"
+bank-withdraw: "{prefix}<gray>Withdrew <white>{amount}</white> from your bank.</gray>"
+bank-failed: "{prefix}<red>Could not complete that bank transfer.</red>"
 
 # =============================================================================
 # Administrative Economy Messages
 # =============================================================================
 
-eco-give: "{prefix}&7Gave &f{amount} &7to &f{player}&7."
-eco-take: "{prefix}&7Took &f{amount} &7from &f{player}&7."
-eco-set: "{prefix}&7Set &f{player}&7's {currency} to &f{amount}&7."
-eco-reset: "{prefix}&7Reset &f{player}&7's wallet {currency} to starting balance."
-eco-bank-give: "{prefix}&7Gave &f{amount} &7to &f{player}&7's bank."
-eco-bank-take: "{prefix}&7Took &f{amount} &7from &f{player}&7's bank."
-eco-bank-set: "{prefix}&7Set &f{player}&7's banked {currency} to &f{amount}&7."
-eco-bank-reset: "{prefix}&7Reset &f{player}&7's banked {currency} to zero."
-eco-reload: "{prefix}&aReloaded config and language."
+eco-give: "{prefix}<gray>Gave <white>{amount}</white> to <white>{player}</white>.</gray>"
+eco-take: "{prefix}<gray>Took <white>{amount}</white> from <white>{player}</white>.</gray>"
+eco-set: "{prefix}<gray>Set <white>{player}</white>'s {currency} to <white>{amount}</white>.</gray>"
+eco-reset: "{prefix}<gray>Reset <white>{player}</white>'s wallet {currency} to starting balance.</gray>"
+eco-bank-give: "{prefix}<gray>Gave <white>{amount}</white> to <white>{player}</white>'s bank.</gray>"
+eco-bank-take: "{prefix}<gray>Took <white>{amount}</white> from <white>{player}</white>'s bank.</gray>"
+eco-bank-set: "{prefix}<gray>Set <white>{player}</white>'s banked {currency} to <white>{amount}</white>.</gray>"
+eco-bank-reset: "{prefix}<gray>Reset <white>{player}</white>'s banked {currency} to zero.</gray>"
+eco-reload: "{prefix}<green>Reloaded config and language.</green>"
 
 # =============================================================================
 # Balance Leaderboard
 # =============================================================================
 
-baltop-header: "{prefix}&7Top {currency} &8(&7page {page}&8)"
-baltop-line: "&e{rank}. &f{player} &7- &f{amount}"
-baltop-empty: "{prefix}&7Nobody has this currency yet."
-baltop-page: "{prefix}&cNo such page."
+baltop-header: "{prefix}<gray>Top {currency} <dark_gray>(</dark_gray><gray>page {page}</gray><dark_gray>)</dark_gray>"
+baltop-line: "<yellow>{rank}. <white>{player}</white> <gray>- <white>{amount}</white></yellow>"
+baltop-empty: "{prefix}<gray>Nobody has this currency yet.</gray>"
+baltop-page: "{prefix}<red>No such page.</red>"
 
 # =============================================================================
 # Currency List
 # =============================================================================
 
-currency-list-header: "{prefix}&7Currencies &8(default: &f{default}&8)"
-currency-list-line: "&8- &f{id} &7{singular}/{plural} &8({symbol})"
+currency-list-header: "{prefix}<gray>Currencies <dark_gray>(default: <white>{default}</white>)</dark_gray>"
+currency-list-line: "<dark_gray>- <white>{id}</white> <gray>{singular}/{plural}</gray> <dark_gray>({symbol})</dark_gray>"
 
 # =============================================================================
 # Command Usage
 # =============================================================================
 
-usage-balance: "{prefix}&7Usage: &f/balance [player] [currency]"
-usage-bank: "{prefix}&7Usage: &f/bank <balance|transfer|withdraw> [amount] [currency]"
-usage-pay: "{prefix}&7Usage: &f/pay <player> <amount> [currency]"
-usage-baltop: "{prefix}&7Usage: &f/baltop [currency] [page]"
-usage-eco: "{prefix}&7Usage: &f/eco <give|take|set|reset|bank|reload> [player] [amount] [currency]"
-usage-eco-bank: "{prefix}&7Usage: &f/eco bank <give|take|set|reset> <player> [amount] [currency]"
+usage-balance: "{prefix}<gray>Usage: <white>/balance [player] [currency]</white></gray>"
+usage-bank: "{prefix}<gray>Usage: <white>/bank \\<balance|transfer|withdraw\\> [amount] [currency]</white></gray>"
+usage-pay: "{prefix}<gray>Usage: <white>/pay \\<player\\> \\<amount\\> [currency]</white></gray>"
+usage-baltop: "{prefix}<gray>Usage: <white>/baltop [currency] [page]</white></gray>"
+usage-eco: "{prefix}<gray>Usage: <white>/eco \\<give|take|set|reset|bank|reload\\> [player] [amount] [currency]</white></gray>"
+usage-eco-bank: "{prefix}<gray>Usage: <white>/eco bank \\<give|take|set|reset\\> \\<player\\> [amount] [currency]</white></gray>"
